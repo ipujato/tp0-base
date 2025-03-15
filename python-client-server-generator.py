@@ -26,7 +26,7 @@ services:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
     volumes:
-      - ./server/config.ini:/config/config.ini
+      - ./server/config.ini:/config.ini
     networks:
       - testing_net
 """
@@ -41,7 +41,7 @@ for i in range(1, cantidad_clientes + 1):
       - CLI_ID={i}
       - CLI_LOG_LEVEL=DEBUG
     volumes:
-      - ./client/config.yaml:/config/config.yaml
+      - ./client/config.yaml:/config.yaml
     networks:
       - testing_net
     depends_on:
