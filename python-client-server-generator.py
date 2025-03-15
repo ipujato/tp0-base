@@ -16,8 +16,7 @@ except:
 if cantidad_clientes < 1:
     raise Exception("Se debe recibir como minimo 1 cliente.")
 
-string_compose = """
-name: tp0
+string_compose = """name: tp0
 services:
   server:
     container_name: server
@@ -45,16 +44,17 @@ for i in range(1, cantidad_clientes + 1):
       - server
 """
 
-string_compose += """
-networks:
+string_compose += """networks:
   testing_net:
     ipam:
       driver: default
       config:
         - subnet: 172.25.125.0/24
 """
-
-archivo = open(archivo_salida, "w")
+try:
+    archivo = open(archivo_salida, "w")
+except:
+    raise Exception("Error al intentar abrir el archivo en escritura.")
 archivo.write(string_compose)
 archivo.close()
 
