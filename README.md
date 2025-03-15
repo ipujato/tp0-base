@@ -180,6 +180,12 @@ Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/
 La corrección personal tendrá en cuenta la calidad del código entregado y casos de error posibles, se manifiesten o no durante la ejecución del trabajo práctico. Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
 
 # Ejecucion y consideraciones
-## Ej1
+## Parte 1: Introducción a Docker
+### Ej1
 Para ejecutarlo primero debí correr `chmod +x generar-compose.sh` debido a que no tenia permisos de ejecución. Es posible que sea necesario. Luego se corre como dice el enunciado, desde raíz: `./generar-compose.sh docker-compose-dev.yaml 5`.
-Como casos de error tuve en cuenta: parámetros insuficientes, cantidades invalidas de clientes (negativos o 0), archivos inválidos y parámetros inválidos. Comprobé en bash la cantidad de parámetros para no levantar python innecesariamente ya que es una comprobación fácil y rápida realizable en bash sin problemas.
+
+Como casos de error tuve en cuenta: parámetros insuficientes, cantidades invalidas de clientes (negativos o 0), archivos inválidos y parámetros inválidos. 
+Comprobé en bash la cantidad de parámetros para no levantar python innecesariamente ya que es una comprobación fácil y rápida realizable en bash sin problemas.
+
+### Ej2
+Se corre con los make provistos por la catedra.
