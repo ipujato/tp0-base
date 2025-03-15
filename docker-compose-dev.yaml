@@ -1,3 +1,4 @@
+
 name: tp0
 services:
   server:
@@ -16,6 +17,594 @@ services:
     entrypoint: /client
     environment:
       - CLI_ID=1
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client2:
+    container_name: client2
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=2
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client3:
+    container_name: client3
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=3
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client4:
+    container_name: client4
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=4
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client5:
+    container_name: client5
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=5
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client6:
+    container_name: client6
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=6
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client7:
+    container_name: client7
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=7
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client8:
+    container_name: client8
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=8
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client9:
+    container_name: client9
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=9
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client10:
+    container_name: client10
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=10
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client11:
+    container_name: client11
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=11
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client12:
+    container_name: client12
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=12
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client13:
+    container_name: client13
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=13
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client14:
+    container_name: client14
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=14
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client15:
+    container_name: client15
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=15
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client16:
+    container_name: client16
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=16
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client17:
+    container_name: client17
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=17
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client18:
+    container_name: client18
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=18
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client19:
+    container_name: client19
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=19
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client20:
+    container_name: client20
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=20
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client21:
+    container_name: client21
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=21
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client22:
+    container_name: client22
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=22
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client23:
+    container_name: client23
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=23
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client24:
+    container_name: client24
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=24
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client25:
+    container_name: client25
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=25
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client26:
+    container_name: client26
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=26
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client27:
+    container_name: client27
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=27
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client28:
+    container_name: client28
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=28
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client29:
+    container_name: client29
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=29
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client30:
+    container_name: client30
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=30
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client31:
+    container_name: client31
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=31
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client32:
+    container_name: client32
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=32
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client33:
+    container_name: client33
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=33
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client34:
+    container_name: client34
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=34
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client35:
+    container_name: client35
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=35
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client36:
+    container_name: client36
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=36
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client37:
+    container_name: client37
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=37
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client38:
+    container_name: client38
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=38
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client39:
+    container_name: client39
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=39
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client40:
+    container_name: client40
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=40
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client41:
+    container_name: client41
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=41
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client42:
+    container_name: client42
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=42
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client43:
+    container_name: client43
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=43
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client44:
+    container_name: client44
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=44
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client45:
+    container_name: client45
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=45
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client46:
+    container_name: client46
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=46
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client47:
+    container_name: client47
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=47
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client48:
+    container_name: client48
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=48
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client49:
+    container_name: client49
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=49
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+
+  client50:
+    container_name: client50
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=50
       - CLI_LOG_LEVEL=DEBUG
     networks:
       - testing_net
