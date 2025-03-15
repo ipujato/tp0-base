@@ -44,7 +44,8 @@ for i in range(1, cantidad_clientes + 1):
       - server
 """
 
-string_compose += """networks:
+string_compose += """
+networks:
   testing_net:
     ipam:
       driver: default
