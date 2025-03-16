@@ -1,18 +1,15 @@
 import sys
 
-# Revisamos cuantos argumentos llegan 
 if len(sys.argv) != 3:
     raise Exception("Se deben recibir exactamente 2 parametros.")
 
 archivo_salida = sys.argv[1]
 
-# Comprobamos que clientes sea un entero
 try:
     cantidad_clientes = int(sys.argv[2])
 except:
     raise Exception("El segundo parametro debe ser un entero.")
 
-# Revisamos que la cantidad de clientes sea valida 
 if cantidad_clientes < 0:
     raise Exception("Se debe recibir como minimo 1 cliente.")
 
