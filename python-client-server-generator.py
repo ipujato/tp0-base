@@ -13,7 +13,7 @@ except:
     raise Exception("El segundo parametro debe ser un entero.")
 
 # Revisamos que la cantidad de clientes sea valida 
-if cantidad_clientes < 1:
+if cantidad_clientes < 0:
     raise Exception("Se debe recibir como minimo 1 cliente.")
 
 string_compose = """name: tp0
