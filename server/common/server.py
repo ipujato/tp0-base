@@ -40,6 +40,7 @@ class Server:
             # TODO: Modify the receive to avoid short-reads
             msg = client_sock.recv(1024).rstrip().decode('utf-8')
             addr = client_sock.getpeername()
+            self.clients.append(addr)
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes
             client_sock.send("{}\n".format(msg).encode('utf-8'))
@@ -50,9 +51,9 @@ class Server:
 
     def __handle_shutdown(self):
         logging.info('action: shutdown | result: in_progress')
+        self._server_socket.close()
         for client in self.clients:
             client.close()
-        self._server_socket.close()
         logging.info('action: shutdown | result: success')
         
 
@@ -69,5 +70,4 @@ class Server:
         logging.info('action: accept_connections | result: in_progress')
         c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        self.clients.append(c)
         return c

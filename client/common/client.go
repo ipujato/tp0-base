@@ -36,9 +36,9 @@ type Client struct {
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
+		signalChannel: make(chan os.Signal, 2),
 	}
 
-	client.signalChannel = make(chan os.Signal, 2)
 	signal.Notify(client.signalChannel, syscall.SIGTERM)
 	
 	return client
@@ -99,12 +99,9 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 func (c *Client) ShutHandle() {
-	sig := <-c.signalChannel
-	switch sig {
-	case syscall.SIGTERM:
-		c.conn.Close()
-		c.config.LoopAmount = 0
-		log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-		os.Exit(0)
-	}
+	<-c.signalChannel
+	c.conn.Close()
+	c.config.LoopAmount = -1
+	log.Criticalf("action: shutdown | result: success | client_id: %v", c.config.ID)
+
 }
