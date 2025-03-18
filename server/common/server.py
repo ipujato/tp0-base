@@ -12,6 +12,7 @@ class Server:
 
         # ej4
         self.clients = []
+        self.running = True
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
 
     def run(self):
@@ -25,7 +26,7 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
-        while True:
+        while self.running:
             client_sock = self.__accept_new_connection()
             if client_sock != None:
                 self.__handle_client_connection(client_sock)
@@ -52,6 +53,7 @@ class Server:
 
     def __handle_shutdown(self,  signum, frame):
         logging.info('action: shutdown | result: in_progress')
+        self.running = False
         self._server_socket.close()
         for client in self.clients:
             client.close()
