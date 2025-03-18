@@ -29,6 +29,7 @@ type Client struct {
 	config ClientConfig
 	conn   net.Conn
 	signalChannel chan os.Signal
+	running bool
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -37,6 +38,7 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
 		signalChannel: make(chan os.Signal, 2),
+		running: true,
 	}
 
 	signal.Notify(client.signalChannel, syscall.SIGTERM)
@@ -64,7 +66,7 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 		
@@ -101,7 +103,7 @@ func (c *Client) StartClientLoop() {
 func (c *Client) ShutHandle() {
 	<-c.signalChannel
 	c.conn.Close()
-	c.config.LoopAmount = -1
+	c.running = false
 	log.Criticalf("action: shutdown | result: success | client_id: %v", c.config.ID)
 
 }
