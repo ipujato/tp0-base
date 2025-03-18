@@ -7,7 +7,6 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-# Impresion para controlar los parametros
 echo "Archivo de salida: $1"
 echo "Cantidad de clientes: $2"
 
