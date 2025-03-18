@@ -49,7 +49,7 @@ class Server:
         finally:
             client_sock.close()
 
-    def __handle_shutdown(self):
+    def __handle_shutdown(self,  signum, frame):
         logging.info('action: shutdown | result: in_progress')
         self._server_socket.close()
         for client in self.clients:
