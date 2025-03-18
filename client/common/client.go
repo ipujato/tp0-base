@@ -22,13 +22,13 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
-	signalChannel chan os.Signal
 }
 
 // Client Entity that encapsulates how
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
+	signalChannel chan os.Signal
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -107,5 +107,4 @@ func (c *Client) ShutHandle() {
 		log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
 		os.Exit(0)
 	}
-}
 }

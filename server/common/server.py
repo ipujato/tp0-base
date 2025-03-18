@@ -12,7 +12,7 @@ class Server:
 
         # ej4
         self.clients = []
-        signal.signal(SIGTERM, __handle_shutdown)
+        signal.signal(signal.SIGTERM, self.__handle_shutdown)
 
     def run(self):
         """
