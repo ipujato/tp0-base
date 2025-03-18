@@ -9,6 +9,9 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+
+        # ej4
+        self.clients = []
         signal.signal(SIGTERM, __handle_shutdown)
 
     def run(self):
@@ -47,6 +50,8 @@ class Server:
 
     def __handle_shutdown(self):
         logging.info('action: shutdown | result: in_progress')
+        for client in self.clients:
+            client.close()
         self._server_socket.close()
         logging.info('action: shutdown | result: success')
         
@@ -64,4 +69,5 @@ class Server:
         logging.info('action: accept_connections | result: in_progress')
         c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+        self.clients.append(c)
         return c
