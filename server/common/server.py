@@ -1,5 +1,6 @@
 import socket
 import logging
+import signal
 
 
 class Server:
@@ -8,6 +9,7 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        signal.signal(SIGTERM, __handle_shutdown)
 
     def run(self):
         """
@@ -42,6 +44,13 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
+
+    def __handle_shutdown(self):
+        logging.info('action: shutdown | result: in_progress')
+        self._server_socket.close()
+        logging.info('action: shutdown | result: success')
+        
+
 
     def __accept_new_connection(self):
         """
