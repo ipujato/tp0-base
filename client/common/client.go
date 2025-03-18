@@ -36,6 +36,11 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
 	}
+
+	// ej4
+	signalChannel := make(chan os.Signal, 2)
+	signal.Notify(signalChannel, syscall.SIGTERM)
+	
 	return client
 }
 
@@ -63,9 +68,6 @@ func (c *Client) StartClientLoop() {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 		
-		// ej4
-		signalChannel := make(chan os.Signal, 2)
-	    signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
 
 		// TODO: Modify the send to avoid short-write
 		fmt.Fprintf(
