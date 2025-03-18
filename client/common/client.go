@@ -6,6 +6,11 @@ import (
 	"net"
 	"time"
 
+	// ej4
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/op/go-logging"
 )
 
@@ -57,6 +62,10 @@ func (c *Client) StartClientLoop() {
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
+		
+		// ej4
+		signalChannel := make(chan os.Signal, 2)
+	    signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
 
 		// TODO: Modify the send to avoid short-write
 		fmt.Fprintf(
@@ -86,4 +95,14 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func() ShutHandle {
+	sig := <-signalChannel
+	switch sig {
+	case syscall.SIGTERM:
+		c.conn.Close()
+		log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
+		os.Exit(0)
+	}
 }
