@@ -22,6 +22,7 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	signalChannel chan os.Signal
 }
 
 // Client Entity that encapsulates how
@@ -37,9 +38,8 @@ func NewClient(config ClientConfig) *Client {
 		config: config,
 	}
 
-	// ej4
-	signalChannel := make(chan os.Signal, 2)
-	signal.Notify(signalChannel, syscall.SIGTERM)
+	client.signalChannel = make(chan os.Signal, 2)
+	signal.Notify(client.signalChannel, syscall.SIGTERM)
 	
 	return client
 }
@@ -98,9 +98,8 @@ func (c *Client) StartClientLoop() {
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
-
-func() ShutHandle {
-	sig := <-signalChannel
+func (c *Client) ShutHandle() {
+	sig := <-c.signalChannel
 	switch sig {
 	case syscall.SIGTERM:
 		c.conn.Close()
@@ -108,4 +107,5 @@ func() ShutHandle {
 		log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
 		os.Exit(0)
 	}
+}
 }
