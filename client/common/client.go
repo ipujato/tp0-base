@@ -72,7 +72,7 @@ func (c *Client) StartClientLoop() {
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
+		go c.createClientSocket()
 		log.Infof("action: loop_iter | result: success | client_id: %v", c.config.ID)
 		
 		//ej4
