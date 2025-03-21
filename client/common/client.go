@@ -66,12 +66,14 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop() {
 	//ej4
 	c.ShutHandle()
+	log.Infof("action: loop_starts | result: success | client_id: %v", c.config.ID)
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
+		log.Infof("action: loop_iter | result: success | client_id: %v", c.config.ID)
 		
 		//ej4
 		if !c.running {
@@ -112,7 +114,11 @@ func (c *Client) StartClientLoop() {
 }
 
 func (c *Client) ShutHandle() {
+	log.Infof("action: begin handle | result: success )
 	<-c.signalChannel
+	log.Infof("action: signal recived | result: success )
 	c.conn.Close()
 	c.running = false
+	log.Infof("action: end handle | result: success )
+
 }
