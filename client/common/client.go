@@ -73,6 +73,11 @@ func (c *Client) StartClientLoop() {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 		
+		//ej4
+		if !c.running {
+			log.Criticalf("action: shutdown | result: success | client_id: %v", c.config.ID)
+			break
+		}
 
 		// TODO: Modify the send to avoid short-write
 		fmt.Fprintf(
@@ -81,6 +86,8 @@ func (c *Client) StartClientLoop() {
 			c.config.ID,
 			msgID,
 		)
+		
+		
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		c.conn.Close()
 
@@ -108,6 +115,4 @@ func (c *Client) ShutHandle() {
 	<-c.signalChannel
 	c.conn.Close()
 	c.running = false
-	log.Criticalf("action: shutdown | result: success | client_id: %v", c.config.ID)
-
 }
