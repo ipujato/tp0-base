@@ -37,7 +37,7 @@ type Client struct {
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
-		signalChannel: make(chan os.Signal, 2),
+		signalChannel: make(chan os.Signal, 1),
 		running: true,
 	}
 
@@ -65,19 +65,20 @@ func (c *Client) createClientSocket() error {
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 	//ej4
-	c.ShutHandle()
+	go c.ShutHandle()
+	
 	log.Infof("action: loop_starts | result: success | client_id: %v", c.config.ID)
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
-		go c.createClientSocket()
+		c.createClientSocket()
 		log.Infof("action: loop_iter | result: success | client_id: %v", c.config.ID)
 		
 		//ej4
 		if !c.running {
-			log.Criticalf("action: shutdown | result: success | client_id: %v", c.config.ID)
+			log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
 			break
 		}
 
@@ -114,11 +115,11 @@ func (c *Client) StartClientLoop() {
 }
 
 func (c *Client) ShutHandle() {
-	log.Infof("action: begin handle | result: success )
+	log.Infof("action: begin handle | result: success" )
 	<-c.signalChannel
-	log.Infof("action: signal recived | result: success )
+	log.Infof("action: signal recived | result: success" )
 	c.conn.Close()
 	c.running = false
-	log.Infof("action: end handle | result: success )
+	log.Infof("action: end handle | result: success" )
 
 }
