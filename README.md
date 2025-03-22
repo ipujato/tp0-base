@@ -184,8 +184,16 @@ La corrección personal tendrá en cuenta la calidad del código entregado y cas
 ### Ej1
 Para ejecutarlo primero debí correr `chmod +x generar-compose.sh` debido a que no tenia permisos de ejecución. Es posible que sea necesario. Luego se corre como dice el enunciado, desde raíz: `./generar-compose.sh docker-compose-dev.yaml 5`.
 
-Como casos de error tuve en cuenta: parámetros insuficientes, cantidades invalidas de clientes (negativos o 0), archivos inválidos y parámetros inválidos. 
+Como casos de error tuve en cuenta: parámetros insuficientes, cantidades invalidas de clientes (negativos), archivos inválidos y parámetros inválidos. 
 Comprobé en bash la cantidad de parámetros para no levantar python innecesariamente ya que es una comprobación fácil y rápida realizable en bash sin problemas.
 
 ### Ej2
 Se corre con los make provistos por la catedra.
+
+### Ej3 
+Para ejecutarlo primero debí correr `chmod +x validar-echo-server.sh` debido a que no tenia permisos de ejecución. Es posible que sea necesario. Luego se corre como dice el enunciado, desde raíz: `./validar-echo-server.sh`.
+
+### Ej4
+Para esto tuve que implementar un catch a la señal de Sigterm en ambos el cliente y el server.
+Del lado del server se implementa con signal.signal donde definimos que funcion handleará la señal. En el handler en si se loggea el cierre, se setea en un bool de estado, se cierra el socket de acceptacion y el de todos los clientes.
+Del lado del client en el go se crea un channel con os.Signal y luego signal.Notify donde se define que en ese chanel se recibira la señal. Luego se genera al comienzo del cliente la go rutine que ejecuta la function de handle, que queda bloqueada a espera de la notificacion. Al ser notificado cierra el skt y setea un bool de estado.
