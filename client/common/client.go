@@ -117,9 +117,7 @@ func (c *Client) StartClientLoop() {
 func (c *Client) ShutHandle() {
 	log.Infof("action: begin handle | result: success" )
 	<-c.signalChannel
-	log.Infof("action: signal recived | result: success" )
 	c.conn.Close()
 	c.running = false
 	log.Infof("action: end handle | result: success" )
-
 }
