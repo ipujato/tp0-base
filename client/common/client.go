@@ -261,7 +261,7 @@ func (c Client) recvBetConfirmation() (string, error) {
 	msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
 	msgBuffer := make([]byte, msgSize)
 	_, err = io.ReadFull(c.conn, msgBuffer)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		log.Errorf("action: recv msg | result: fail | client_id: %v | error: %v",
 			c.config.ID,
 			err,
