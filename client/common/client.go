@@ -114,9 +114,10 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-
+		log.Infof("conn: %v", c.conn)
 		// recibir respuesta con cuidado de recibir el tamaño de la respuesta
 		msg, err := c.recvBetConfirmation()
+		log.Infof("conn: %v", c.conn)
 
 		if err != nil || msg == "" {
 			log.Errorf("action: recvBetConfirmation | result: fail | client_id: %v | error: recv incomplete",
@@ -125,7 +126,7 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
-		log.Infof("confimacion recivida | result: succes | msg: %s", msg)
+		log.Infof("confimacion recibida | result: succes | msg: %s", msg)
 
 		log.Infof("apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
 
@@ -256,18 +257,18 @@ func (c Client) recvBetConfirmation() (string, error) {
 		return "", err
 	}
 
-	// msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
-	// msgBuffer := make([]byte, msgSize)
-	// _, err = io.ReadFull(c.conn, msgBuffer)
-	// if err != nil {
-	// 	log.Errorf("action: recv msg | result: fail | client_id: %v | error: %v",
-	// 		c.config.ID,
-	// 		err,
-	// 	)
-	// 	return "", err
-	// }
+	msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
+	msgBuffer := make([]byte, msgSize)
+	_, err = io.ReadFull(c.conn, msgBuffer)
+	if err != nil {
+		log.Errorf("action: recv msg | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return "", err
+	}
 
 	c.conn.Close()
 
-	return string(binary.BigEndian.Uint32(sizeBuffer)), nil
+	return string(msgBuffer), nil
 }
