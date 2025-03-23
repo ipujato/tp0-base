@@ -60,6 +60,7 @@ func (c *Client) createClientSocket() error {
 			err,
 		)
 	}
+	log.Infof("creada conn")
 	c.conn = conn
 	return nil
 }
@@ -157,6 +158,7 @@ func (c *Client) StartClientLoop() {
 func (c *Client) ShutHandle() {
 	log.Infof("action: begin handle | result: success" )
 	<-c.signalChannel
+	log.Infof("cerrado conn en shuthandle")
 	c.conn.Close()
 	c.running = false
 	log.Infof("action: end handle | result: success" )
@@ -210,6 +212,7 @@ func (c Client) sendBets(bet Bet) (int, error) {
 	messageSize := buffer.Len()
 	totalSent := 0
 	for totalSent < messageSize {
+		log.Infof("escritura de conn en sendBets")
 		n, err := c.conn.Write(buffer.Bytes())
 		if err != nil {
 			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",

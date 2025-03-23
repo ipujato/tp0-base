@@ -104,6 +104,7 @@ class Server:
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
+            logging.info("server cierra el socket")
             client_sock.close()
 
     def __handle_shutdown(self,  signum, frame):
