@@ -1,5 +1,11 @@
 import sys
 
+nombres = ["Santiago", "Julian", "Enzo"]
+apellidos = ["Lorca", "Alvarez", "Fernandez"]
+dnis = ["30904465", "40912301", "33912301"]
+nacimientos = ["1999-03-17", "2000-01-31", "2001-01-17"]
+numeros = ["7574", "9999", "8524"]
+
 if len(sys.argv) != 3:
     raise Exception("Se deben recibir exactamente 2 parametros.")
 
@@ -29,24 +35,24 @@ services:
 
 for i in range(1, cantidad_clientes + 1):
     string_compose += f"""
-  client{i}:
+    client{i}:
     container_name: client{i}
     image: client:latest
     entrypoint: /client
     environment:
       - CLI_ID={i}
-      - NOMBRE="Santiago"
-      - APELLIDO="Lorca"
-      - DOCUMENTO=30904465
-      - NACIMIENTO=1999-03-17
-      - NUMERO=7574
+      - NOMBRE={nombres[(i-1) % len(nombres)]}
+      - APELLIDO={apellidos[(i-1) % len(apellidos)]}
+      - DOCUMENTO={dnis[(i-1) % len(dnis)]}
+      - NACIMIENTO={nacimientos[(i-1) % len(nacimientos)]}
+      - NUMERO={numeros[(i-1) % len(numeros)]}
     volumes:
       - ./client/config.yaml:/config.yaml
     networks:
       - testing_net
     depends_on:
       - server
-"""
+  """
 
 string_compose += """
 networks:
