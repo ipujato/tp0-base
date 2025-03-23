@@ -49,7 +49,7 @@ class Server:
                         raise Exception(f'Full read could not be achieved. Read up to now {read_size} of 4')
                     esp_siz += recvd
                     read_size += len(recvd)
-            expected_size = esp_siz.decode('utf-8')
+            expected_size = int.from_bytes(esp_siz, byteorder="big")
 
             expected_size = int(expected_size)
             if expected_size <= 0:
