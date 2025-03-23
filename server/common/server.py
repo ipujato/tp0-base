@@ -1,6 +1,7 @@
 import socket
 import logging
 import signal
+import struct
 from .utils import *
 
 
@@ -44,7 +45,8 @@ class Server:
             # msg = client_sock.recv(1024).rstrip().decode('utf-8')
             # ! recv
             ## rcv size
-            expected_size = client_sock.recv(4).rstrip()
+            esp_siz = client_sock.recv(4).rstrip()
+            expected_size = struct.unpack('!I', esp_siz)[0]
             if not expected_size.isdigit():
                 logging.error(f'action: receive_message | result: fail | error: invalid size received | excepcted_size: {expected_size}')
                 return
