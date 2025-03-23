@@ -51,7 +51,7 @@ class Server:
                 while read_size < 4:
                         recvd = client_sock.recv(4 - read_size)
                         if not recvd:
-                            raise Exception(f'Full read could not be achieved. Read up to now: {message}')
+                            raise Exception(f'Full read could not be achieved. Read up to now {read_size} of 4')
                         esp_siz += recvd
                         read_size += len(recvd)
                 print(esp_siz)
@@ -70,7 +70,7 @@ class Server:
                     while read_size < expected_size:
                         recvd = client_sock.recv(expected_size - read_size)
                         if not recvd:
-                            raise Exception(f'Full read could not be achieved. Read up to now: {message}')
+                            raise Exception(f'Full read could not be achieved. Read up to now: {read_size} of {expected_size}')
                         message += recvd
                         read_size += len(recvd)
                 except Exception as e:
