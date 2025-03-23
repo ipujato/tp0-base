@@ -64,7 +64,6 @@ class Server:
 
             confirmation_size = len(confirmation_to_send).to_bytes(4, byteorder="big")
             message = confirmation_size + confirmation_to_send
-            bytes_sent = 0
             
             client_sock.sendall(message)
 
