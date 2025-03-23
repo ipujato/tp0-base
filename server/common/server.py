@@ -44,7 +44,7 @@ class Server:
             # msg = client_sock.recv(1024).rstrip().decode('utf-8')
             # ! recv
             ## rcv size
-            expected_size = client_sock.recv(4).rstrip().decode('utf-8')
+            expected_size = client_sock.recv(4).rstrip()
             if not expected_size.isdigit():
                 logging.error(f'action: receive_message | result: fail | error: invalid size received | excepcted_size: {expected_size}')
                 return
