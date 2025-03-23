@@ -77,7 +77,7 @@ class Server:
 
             confirmation_to_send = "Bet received successfully".encode('utf-8')
 
-            confirmation_size = len(confirmation_to_send).encode('utf-8')
+            confirmation_size = str(len(confirmation_to_send)).encode('utf-8')
             message = confirmation_size + confirmation_to_send
             bytes_sent = 0
             
