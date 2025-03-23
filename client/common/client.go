@@ -60,7 +60,6 @@ func (c *Client) createClientSocket() error {
 			err,
 		)
 	}
-	log.Infof("creada conn")
 	c.conn = conn
 	return nil
 }
@@ -107,9 +106,7 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// enviar con cuidado de que cubra bien la cantidad
-		log.Infof("conn: %v", c.conn)
 		sentSize, err := c.sendBets(bet)
-		log.Infof("conn: %v", c.conn)
 
 		if err != nil || sentSize == 0 {
 			log.Errorf("action: send_bet | result: fail | client_id: %v | error: sent incomplete",
@@ -117,10 +114,8 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-		log.Infof("conn: %v", c.conn)
 		// recibir respuesta con cuidado de recibir el tamaño de la respuesta
 		msg, err := c.recvBetConfirmation()
-		log.Infof("conn: %v", c.conn)
 
 		if err != nil || msg == "" {
 			log.Errorf("action: recvBetConfirmation | result: fail | client_id: %v | error: recv incomplete",
@@ -162,7 +157,6 @@ func (c *Client) StartClientLoop() {
 func (c *Client) ShutHandle() {
 	log.Infof("action: begin handle | result: success" )
 	<-c.signalChannel
-	log.Infof("cerrado conn en shuthandle")
 	c.conn.Close()
 	c.running = false
 	log.Infof("action: end handle | result: success" )
@@ -214,7 +208,6 @@ func (c Client) sendBets(bet Bet) (int, error) {
 	}
 	
 	messageSize := buffer.Len()
-	log.Infof("action: buffer_done | buffer: %v | size: %v", buffer.Bytes(), buffer.Len())
 	totalSent := 0
 	for totalSent < messageSize {
 		log.Infof("escritura de conn en sendBets")
@@ -248,7 +241,6 @@ func (c Client) recvBetConfirmation() (string, error) {
 	}
 
 	sizeBuffer := make([]byte, 4)
-	log.Infof("action: recv size | buffer: %v | conn: %v", sizeBuffer, c.conn)
 	_, err := io.ReadFull(c.conn, sizeBuffer) 
 	if err != nil {
 		log.Errorf("action: recv size | result: fail | client_id: %v | error: %v",
