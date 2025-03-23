@@ -93,7 +93,7 @@ class Server:
                 logging.info(f'2 socket {client_sock}')
 
                 # confirmation_size = struct.pack('>I', len(confirmation_to_send))
-                confirmation_size = len(confirmation_to_send)
+                confirmation_size = str(len(confirmation_to_send))
                 logging.info(f'3 socket {client_sock}')
                 message = confirmation_size + confirmation_to_send
                 logging.info(f'4 socket {client_sock}')
