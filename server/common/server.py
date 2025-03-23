@@ -41,73 +41,47 @@ class Server:
         client socket will also be closed
         """
         try:
-            # while self.running:
-                # # TODO: Modify the receive to avoid short-reads
-                # msg = client_sock.recv(1024).rstrip().decode('utf-8')
-                # ! recv
-                ## rcv size
-                esp_siz = b''
-                read_size = 0
-                while read_size < 4:
-                        recvd = client_sock.recv(4 - read_size)
-                        if not recvd:
-                            raise Exception(f'Full read could not be achieved. Read up to now {read_size} of 4')
-                        esp_siz += recvd
-                        read_size += len(recvd)
-                expected_size = struct.unpack('>I', esp_siz)[0]
+            esp_siz = b''
+            read_size = 0
+            while read_size < 4:
+                    recvd = client_sock.recv(4 - read_size)
+                    if not recvd:
+                        raise Exception(f'Full read could not be achieved. Read up to now {read_size} of 4')
+                    esp_siz += recvd
+                    read_size += len(recvd)
+            expected_size = struct.unpack('>I', esp_siz)[0]
 
-                expected_size = int(expected_size)
-                if expected_size <= 0:
-                    logging.error("action: receive_message | result: fail | error: non-positive size received")
-                    return
+            expected_size = int(expected_size)
+            if expected_size <= 0:
+                logging.error("action: receive_message | result: fail | error: non-positive size received")
+                return
 
-                ## rcv msg
-                read_size = 0
-                message = b''
-                try:
-                    while read_size < expected_size:
-                        recvd = client_sock.recv(expected_size - read_size)
-                        if not recvd:
-                            raise Exception(f'Full read could not be achieved. Read up to now: {read_size} of {expected_size}')
-                        message += recvd
-                        read_size += len(recvd)
-                except Exception as e:
-                    logging.error(f"action: receive_message | result: fail | error: {e}")
-                    return
-                    
-                # ! store bet
-                
-                self.new_bet_management(message.decode('utf-8'))
+            read_size = 0
+            message = b''
+            try:
+                while read_size < expected_size:
+                    recvd = client_sock.recv(expected_size - read_size)
+                    if not recvd:
+                        raise Exception(f'Full read could not be achieved. Read up to now: {read_size} of {expected_size}')
+                    message += recvd
+                    read_size += len(recvd)
+            except Exception as e:
+                logging.error(f"action: receive_message | result: fail | error: {e}")
+                return
+                            
+            self.new_bet_management(message.decode('utf-8'))
 
-                # # TODO: Modify the send to avoid short-writes
+            addr = client_sock.getpeername()
+            self.clients.append(addr)
+            logging.info(f'action: receive_message | result: success | ip: {addr[0]} ')
 
-                addr = client_sock.getpeername()
-                self.clients.append(addr)
-                logging.info(f'action: receive_message | result: success | ip: {addr[0]} ')
-                # logging.info(f'1 socket {client_sock}')
-                # ! confirm
+            confirmation_to_send = "Bet received successfully".encode('utf-8')
 
-                confirmation_to_send = "Bet received successfully".encode('utf-8')
-                # logging.info(f'2 socket {client_sock}')
-
-                confirmation_size = struct.pack('>I', len(confirmation_to_send))
-                # logging.info(f'3 socket {client_sock}')
-                message = confirmation_size + confirmation_to_send
-                # logging.info(f'4 socket {client_sock}')
-                bytes_sent = 0
-                # logging.info(f'5 socket {client_sock}')
-                # logging.info(f'5. msg {message}')
-                
-                client_sock.sendall(message)
-                # logging.info(f'6 socket {client_sock}')
-                # try:
-                #     while bytes_sent < len(message):
-                #         sent = client_sock.sendall(message[bytes_sent:])
-                #         if sent == 0:
-                #             raise RuntimeError("socket connection broken")
-                #         bytes_sent += sent
-                # except Exception as e:
-                #     logging.error(f"action: send_confirmation | result: fail | error: {e}")
+            confirmation_size = struct.pack('>I', len(confirmation_to_send))
+            message = confirmation_size + confirmation_to_send
+            bytes_sent = 0
+            
+            client_sock.sendall(message)
 
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
