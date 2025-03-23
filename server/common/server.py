@@ -46,7 +46,9 @@ class Server:
             # ! recv
             ## rcv size
             esp_siz = client_sock.recv(4).rstrip()
+            print(esp_siz)
             expected_size = struct.unpack('!I', esp_siz)[0]
+            print(expected_size)
             if not expected_size.isdigit():
                 logging.error(f'action: receive_message | result: fail | error: invalid size received | excepcted_size: {expected_size}')
                 return
