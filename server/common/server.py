@@ -45,9 +45,15 @@ class Server:
             # msg = client_sock.recv(1024).rstrip().decode('utf-8')
             # ! recv
             ## rcv size
-            esp_siz = client_sock.recv(4).rstrip()
+            read_size = 0
+            while read_size < 4:
+                    recvd = client_sock.recv(4 - read_size)
+                    if not recvd:
+                        raise Exception(f'Full read could not be achieved. Read up to now: {message}')
+                    esp_siz += recvd
+                    read_size += len(recvd)
             print(esp_siz)
-            expected_size = struct.unpack('!I', esp_siz)[0]
+            expected_size = struct.unpack('>I', esp_siz)[0]
             print(expected_size)
 
             expected_size = int(expected_size)
@@ -82,10 +88,12 @@ class Server:
             # ! confirm
 
             confirmation_to_send = "Bet received successfully".encode('utf-8')
+            confirmation_size = struct.pack('>I', len(confirmation_to_send))
+            message = confirmation_size + confirmation_to_send
             bytes_sent = 0
             try:
-                while bytes_sent < len(confirmation_to_send):
-                    sent = client_sock.send(confirmation_to_send[bytes_sent:])
+                while bytes_sent < len(message):
+                    sent = client_sock.send(message[bytes_sent:])
                     if sent == 0:
                         raise RuntimeError("socket connection broken")
                     bytes_sent += sent
@@ -110,8 +118,9 @@ class Server:
             agencia, nombre, apellido, documento, nacimiento, numero = rcvd_bets.split('|')
             logging.info(f'action: new_bet_management | result: success | agencia: {agencia} | nombre: {nombre} | apellido: {apellido} | documento: {documento} | nacimiento: {nacimiento} | numero: {numero}')
 
+            bets = []
             bet = Bet(agencia, nombre, apellido, documento, nacimiento, numero)
-            bets = list(bet)
+            bets.append(bet)
             store_bets(bets)
             logging.info(f'action: apuesta_almacenada | result: success | dni: {documento} | numero: {numero}')
 

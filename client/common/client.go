@@ -75,7 +75,6 @@ func (c *Client) StartClientLoop() {
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
 		log.Infof("action: loop_iter | result: success | client_id: %v", c.config.ID)
 		
 		//ej4
@@ -108,7 +107,7 @@ func (c *Client) StartClientLoop() {
 		// enviar con cuidado de que cubra bien la cantidad
 		sentSize, err := c.sendBets(bet)
 
-		if err != nil || sentSize != int(bet.getBetSize()) {
+		if err != nil || sentSize == 0 {
 			log.Errorf("action: send_bet | result: fail | client_id: %v | error: sent incomplete",
 				c.config.ID,
 			)
@@ -184,44 +183,41 @@ func (c Client) getBets() (Bet, error) {
 }
 
 func (c Client) sendBets(bet Bet) (int, error) {
-	data := bet.getBetSerialized()
-	dataSize := bet.getBetSize()
+	c.createClientSocket()
+
+	data := []byte(bet.getBetSerialized())
+	dataSize := uint32(len(data))
 	buffer := new(bytes.Buffer)
 	
-	sizeSent := 0
-	binary.Write(buffer, binary.BigEndian, dataSize)
-	log.Infof("action: send_bet | buffer: %v", buffer.Bytes())
-
-	for sizeSent < 4 {
-		n, err := c.conn.Write(buffer.Bytes())
-		if err != nil {
-			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",
+	err := binary.Write(buffer, binary.BigEndian, dataSize)
+	log.Infof("action: buffer_size | buffer: %v", buffer.Bytes())
+	
+	if err != nil {
+		log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
 			c.config.ID,
-			err,
-		)
-			return sizeSent, err
-		}
-		sizeSent += n
-	}
-
-	if int(dataSize) != len(data) {
-			log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
-			c.config.ID,
-		)
+		)	
 		return 0, fmt.Errorf("data size mismatch")
 	}
 
-	binary.Write(buffer, binary.BigEndian, []byte(data))
+	err = binary.Write(buffer, binary.BigEndian, data)
+	
+	if err != nil {
+		log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
+			c.config.ID,
+		)	
+		return 0, fmt.Errorf("data size mismatch")
+	}
 
+	messageSize := buffer.Len()
 	totalSent := 0
-	for totalSent < int(dataSize) {
+	for totalSent < messageSize {
 		n, err := c.conn.Write(buffer.Bytes())
 		if err != nil {
 			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
-			return totalSent, err
+			return 0, err
 		}
 		totalSent += n
 	}
