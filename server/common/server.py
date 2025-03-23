@@ -1,6 +1,7 @@
 import socket
 import logging
 import signal
+from .utils import *
 
 
 class Server:
@@ -39,13 +40,57 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
+            # # TODO: Modify the receive to avoid short-reads
+            # msg = client_sock.recv(1024).rstrip().decode('utf-8')
+            # ! recv
+            ## rcv size
+            expected_size = client_sock.recv(4).rstrip().decode('utf-8')
+            if not expected_size.isdigit():
+                logging.error("action: receive_message | result: fail | error: invalid size received")
+                return
+
+            expected_size = int(expected_size)
+            if expected_size <= 0:
+                logging.error("action: receive_message | result: fail | error: non-positive size received")
+                return
+
+            ## rcv msg
+            read_size = 0
+            message = b""
+            try:
+                while read_size < expected_size:
+                    recvd = client_sock.recv(expected_size - read_size)
+                    if not recvd:
+                        raise Exception("Full read could not be achieved")
+                    message += recvd
+                    read_size += len(recvd)
+            except Exception as e:
+                logging.error(f"action: receive_message | result: fail | error: {e}")
+                return
+                
+            # ! store bet
+            
+            self.new_bet_management(message)
+
+            # # TODO: Modify the send to avoid short-writes
+
             addr = client_sock.getpeername()
             self.clients.append(addr)
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+
+            # ! confirm
+
+            confirmation_to_send = "Bet received successfully".encode('utf-8')
+            bytes_sent = 0
+            try:
+                while bytes_sent < len(confirmation_to_send):
+                    sent = client_sock.send(confirmation_to_send[bytes_sent:])
+                    if sent == 0:
+                        raise RuntimeError("socket connection broken")
+                    bytes_sent += sent
+            except Exception as e:
+                logging.error(f"action: send_confirmation | result: fail | error: {e}")
+
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
@@ -59,7 +104,18 @@ class Server:
             client.close()
         logging.info('action: shutdown | result: success')
         
+    def new_bet_management(self, rcvd_bets):
+        try:
+            agencia, nombre, apellido, documento, nacimiento, numero = rcvd_bets.split('|')
+            logging.info(f'action: new_bet_management | result: success | agencia: {agencia} | nombre: {nombre} | apellido: {apellido} | documento: {documento} | nacimiento: {nacimiento} | numero: {numero}')
 
+            bet = Bet(agencia, nombre, apellido, documento, nacimiento, numero)
+            bets = list(bet)
+            store_bets(bets)
+            logging.info(f'action: apuesta_almacenada | result: success | dni: {documento} | numero: {numero}')
+
+        except Exception as e:
+            logging.error(f"action: new_bet_management | result: fail | error: {e}")
 
     def __accept_new_connection(self):
         """
