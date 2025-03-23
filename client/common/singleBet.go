@@ -18,5 +18,5 @@ func (b Bet) getBetSize() uint32 {
 }
 
 func (b Bet) getBetSerialized() string {
-	return fmt.Sprintf("%s|%s|%s|%s|%s|%s", b.Agencia, b.Nombre, b.Apellido, b.Documento, b.Nacimiento, b.Numero)
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%s\n", b.Agencia, b.Nombre, b.Apellido, b.Documento, b.Nacimiento, b.Numero)
 }
