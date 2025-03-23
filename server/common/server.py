@@ -114,7 +114,7 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             logging.info("server cierra el socket")
-            # client_sock.close()
+            client_sock.close()
 
     def __handle_shutdown(self,  signum, frame):
         logging.info('action: shutdown | result: in_progress')

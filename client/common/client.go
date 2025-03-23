@@ -267,7 +267,7 @@ func (c Client) recvBetConfirmation() (string, error) {
 		return "", err
 	}
 
-	c.conn.Close()
+	// c.conn.Close()
 
 	return string(msgBuffer), nil
 }
