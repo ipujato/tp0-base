@@ -87,6 +87,7 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
+            self.running = false
 
     def __handle_shutdown(self,  signum, frame):
         logging.info('action: shutdown | result: in_progress')
