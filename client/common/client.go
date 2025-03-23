@@ -128,7 +128,6 @@ func (c *Client) StartClientLoop() {
 
 		log.Infof("apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
 
-		c.conn.Close()
 
 		// log action: apuesta_enviada | result: success | dni: ${DNI} | numero: ${NUMERO}
 
@@ -233,6 +232,13 @@ func (c Client) sendBets(bet Bet) (int, error) {
 func (c Client) recvBetConfirmation() (string, error) {
 	// Esperamos recibir action: apuesta_almacenada | result: success | dni: 11111111 | numero: 1111 
 
+	if c.conn == nil {
+		log.Infof("action: recv size | result: fail | client_id: %v | error: nil conn",
+			c.config.ID,
+		)
+		return "", nil
+	}
+
 	sizeBuffer := make([]byte, 4)
 	log.Infof("action: recv size | buffer: %v | conn: %v", sizeBuffer, c.conn)
 	_, err := io.ReadFull(c.conn, sizeBuffer) 
@@ -254,6 +260,8 @@ func (c Client) recvBetConfirmation() (string, error) {
 		)
 		return "", err
 	}
+
+	c.conn.Close()
 
 	return string(msgBuffer), nil
 }
