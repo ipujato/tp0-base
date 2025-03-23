@@ -45,6 +45,7 @@ class Server:
             # msg = client_sock.recv(1024).rstrip().decode('utf-8')
             # ! recv
             ## rcv size
+            esp_siz = b""
             read_size = 0
             while read_size < 4:
                     recvd = client_sock.recv(4 - read_size)
