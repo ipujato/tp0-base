@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"net"
 	"time"
@@ -125,6 +124,24 @@ func (c *Client) validateAction(action string, condition bool, err error) error 
 	return nil
 }
 
+func (c *Client) validateSend(action string, err error) (int, error) {
+	if err != nil {
+		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
+			action, c.config.ID, err)
+		return 0, err
+	}
+	return 0, nil
+}
+
+func (c *Client) validateRecv(action string, err error) (string, error) {
+	if err != nil {
+		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
+			action, c.config.ID, err)
+		return "", err
+	}
+	return "", nil
+}
+
 func (c Client) getBets() (Bet, error) {
 	nombre := os.Getenv("NOMBRE")
 	apellido := os.Getenv("APELLIDO")
@@ -154,34 +171,18 @@ func (c Client) sendBets(bet Bet) (int, error) {
 	
 	err := binary.Write(buffer, binary.BigEndian, dataSize)
 	
-	if err != nil {
-		log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
-		c.config.ID,
-		)	
-		return 0, fmt.Errorf("data size mismatch")
-	}
+	c.validateSend("buff bet size", err)
 	
 	err = binary.Write(buffer, binary.BigEndian, data)
 	
-	if err != nil {
-		log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
-		c.config.ID,
-		)	
-		return 0, fmt.Errorf("data size mismatch")
-	}
+	c.validateSend("buff bet", err)
 	
 	messageSize := buffer.Len()
 	totalSent := 0
 	for totalSent < messageSize {
 		log.Infof("escritura de conn en sendBets")
 		n, err := c.conn.Write(buffer.Bytes())
-		if err != nil {
-			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return 0, err
-		}
+		c.validateSend("send buff", err)
 		totalSent += n
 	}
 
@@ -205,24 +206,12 @@ func (c Client) recvBetConfirmation() (string, error) {
 
 	sizeBuffer := make([]byte, 4)
 	_, err := io.ReadFull(c.conn, sizeBuffer) 
-	if err != nil {
-		log.Errorf("action: recv size | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return "", err
-	}
+	c.validateRecv("recv msg size", err)
 
 	msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
 	msgBuffer := make([]byte, msgSize)
 	_, err = io.ReadFull(c.conn, msgBuffer)
-	if err != nil && err != io.EOF {
-		log.Errorf("action: recv msg | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return "", err
-	}
+	c.validateRecv("recv msg", err)
 
 	c.conn.Close()
 
