@@ -46,8 +46,10 @@ for i in range(1, cantidad_clientes + 1):
       - DOCUMENTO={dnis[(i-1) % len(dnis)]}
       - NACIMIENTO={nacimientos[(i-1) % len(nacimientos)]}
       - NUMERO={numeros[(i-1) % len(numeros)]}
+      - BETS_FILE=/data/agency-{i}.csv
     volumes:
       - ./client/config.yaml:/config.yaml
+      - .data/agency-{i}.csv:/data/agency-{i}.csv
     networks:
       - testing_net
     depends_on:
