@@ -49,9 +49,6 @@ class Server:
             print(esp_siz)
             expected_size = struct.unpack('!I', esp_siz)[0]
             print(expected_size)
-            if not expected_size.isdigit():
-                logging.error(f'action: receive_message | result: fail | error: invalid size received | excepcted_size: {expected_size}')
-                return
 
             expected_size = int(expected_size)
             if expected_size <= 0:
