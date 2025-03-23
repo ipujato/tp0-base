@@ -129,7 +129,7 @@ class Server:
             logging.info(f'action: apuesta_almacenada | result: success | dni: {documento} | numero: {numero}')
 
         except Exception as e:
-            logging.error(f"action: new_bet_management | result: fail | error: {e}")
+            logging.error(f"action: new_bet_management | result: fail | error: {e} | {rcvd_bets}")
 
     def __accept_new_connection(self):
         """
