@@ -41,20 +41,8 @@ class Server:
         client socket will also be closed
         """
         try:
-            esp_siz = self.__recieve_fixed_size_message(client_sock, 4)
-            expected_size = int.from_bytes(esp_siz, byteorder="big")
-
-            if expected_size <= 0:
-                logging.error("action: receive_message | result: fail | error: non-positive size received")
-                return
-
-            try:
-                message = self.__recieve_fixed_size_message(client_sock, expected_size)
-            except Exception as e:
-                logging.error(f"action: receive_message | result: fail | error: {e}")
-                return
+            result = self._recive_batches(client_sock)
                             
-            self.new_bet_management(message.decode('utf-8'))
 
             addr = client_sock.getpeername()
             self.clients.append(addr)
@@ -72,6 +60,29 @@ class Server:
         finally:
             client_sock.close()
             self.running = False
+
+    def _recive_batches(self, client_sock):
+        still_receiving = True
+        
+        while still_receiving:
+            esp_siz = self.__recieve_fixed_size_message(client_sock, 4)
+            expected_size = int.from_bytes(esp_siz, byteorder="big")
+
+            if expected_size <= 0:
+                logging.error("action: receive_message | result: fail | error: non-positive size received")
+                return False
+
+            try:
+                message = self.__recieve_fixed_size_message(client_sock, expected_size)
+            except Exception as e:
+                logging.error(f"action: receive_message | result: fail | error: {e}")
+                return False
+            if message.decode('utf-8') == "end":
+                still_receiving = False
+            else:
+                self.new_bet_management(message.decode('utf-8'))
+            
+        return True
 
     def __recieve_fixed_size_message(self, client_sock, expected_size):
         read_size = 0

@@ -191,6 +191,8 @@ func (c Client) sendBets(bets []Bet) (int, error) {
 		totalSent += sent
 	}
 
+	send([]byte("end"), c.conn, c.config.ID)
+
 	return totalSent, nil
 }
 
