@@ -190,7 +190,8 @@ func (c Client) sendBets(bet Bet) (int, error) {
 	
 	sizeSent := 0
 	binary.Write(buffer, binary.BigEndian, dataSize)
-	
+	log.Infof("action: send_bet | buffer: %v", buffer.Bytes())
+
 	for sizeSent < 4 {
 		n, err := c.conn.Write(buffer.Bytes())
 		if err != nil {
