@@ -172,10 +172,10 @@ func (c Client) parseBet(line string) (Bet, error) {
 
 func (c Client) sendBets(bets []Bet) (int, error) {
 	totalSent := 0
-
-	for i := 0; i <= len(bets); i++ {
+	i := 0
+	for i < len(bets) {
 		data := []byte{}
-		for j := 0; j < c.config.BatchMaxAmout; j++ {
+		for j := 0; j < c.config.BatchMaxAmout && i < len(bets); j++ {
 			data = append(data, []byte(bets[i].getBetSerialized())...)
 			i++
 		}
