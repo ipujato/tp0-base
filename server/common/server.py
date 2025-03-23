@@ -90,17 +90,17 @@ class Server:
                 # ! confirm
 
                 confirmation_to_send = "Bet received successfully".encode('utf-8')
-                logging.info(f'2 socket {client_sock}')
+                # logging.info(f'2 socket {client_sock}')
 
                 confirmation_size = struct.pack('>I', len(confirmation_to_send))
-                logging.info(f'3 socket {client_sock}')
-                message = confirmation_size + confirmation_to_send
-                logging.info(f'4 socket {client_sock}')
-                bytes_sent = 0
-                logging.info(f'5 socket {client_sock}')
-                logging.info(f'5. msg {message}')
+                # logging.info(f'3 socket {client_sock}')
+                # message = confirmation_size + confirmation_to_send
+                # logging.info(f'4 socket {client_sock}')
+                # bytes_sent = 0
+                # logging.info(f'5 socket {client_sock}')
+                # logging.info(f'5. msg {message}')
                 
-                client_sock.sendall(message)
+                client_sock.sendall(confirmation_size)
                 logging.info(f'6 socket {client_sock}')
                 # try:
                 #     while bytes_sent < len(message):

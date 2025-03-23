@@ -256,18 +256,18 @@ func (c Client) recvBetConfirmation() (string, error) {
 		return "", err
 	}
 
-	msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
-	msgBuffer := make([]byte, msgSize)
-	_, err = io.ReadFull(c.conn, msgBuffer)
-	if err != nil {
-		log.Errorf("action: recv msg | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return "", err
-	}
+	// msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
+	// msgBuffer := make([]byte, msgSize)
+	// _, err = io.ReadFull(c.conn, msgBuffer)
+	// if err != nil {
+	// 	log.Errorf("action: recv msg | result: fail | client_id: %v | error: %v",
+	// 		c.config.ID,
+	// 		err,
+	// 	)
+	// 	return "", err
+	// }
 
 	c.conn.Close()
 
-	return string(msgBuffer), nil
+	return string(binary.BigEndian.Uint32(sizeBuffer)), nil
 }
