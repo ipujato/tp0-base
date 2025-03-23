@@ -187,7 +187,7 @@ func (c Client) sendBets(bet Bet) (int, error) {
 	c.createClientSocket()
 
 	data := []byte(bet.getBetSerialized())
-	print(len(data))
+	
 	dataSize := uint32(len(data))
 	buffer := new(bytes.Buffer)
 	
