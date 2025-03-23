@@ -41,7 +41,6 @@ class Server:
         client socket will also be closed
         """
         try:
-            esp_siz = b''
             esp_siz = self.__recieve_fixed_size_message(client_sock, 4)
             expected_size = int.from_bytes(esp_siz, byteorder="big")
 
@@ -77,6 +76,7 @@ class Server:
 
     def __recieve_fixed_size_message(self, client_sock, expected_size):
         read_size = 0
+        esp_siz = b''
         while read_size < expected_size:
                 recvd = client_sock.recv(expected_size - read_size)
                 if not recvd:
