@@ -53,13 +53,8 @@ func NewClient(config ClientConfig) *Client {
 // is returned
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
-	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-	}
+	c.validateAction("connect", err != nil, err)
+
 	c.conn = conn
 	return nil
 }
@@ -89,32 +84,17 @@ func (c *Client) StartClientLoop() {
 		// recibir y serializar la apuesta
 		bet, err := c.getBets()
 		
-		if err != nil {
-			log.Errorf("action: apuesta_serializada | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
-		}
+		c.validateAction("apuesta_serializada", err != nil, err)
 
 		// enviar con cuidado de que cubra bien la cantidad
 		sentSize, err := c.sendBets(bet)
 
-		if err != nil || sentSize == 0 {
-			log.Errorf("action: send_bet | result: fail | client_id: %v | error: sent incomplete",
-				c.config.ID,
-			)
-			return
-		}
+		c.validateAction("apuesta_serializada", err != nil || sentSize == 0, err)
+
 		// recibir respuesta con cuidado de recibir el tamaño de la respuesta
 		msg, err := c.recvBetConfirmation()
 
-		if err != nil || msg == "" {
-			log.Errorf("action: recvBetConfirmation | result: fail | client_id: %v | error: recv incomplete",
-				c.config.ID,
-			)
-			return
-		}
+		c.validateAction("apuesta_serializada", err != nil || msg == "", err)
 
 		log.Infof("confimacion recibida | result: succes | msg: %s", msg)
 
@@ -134,6 +114,15 @@ func (c *Client) ShutHandle() {
 	c.conn.Close()
 	c.running = false
 	log.Infof("action: end handle | result: success" )
+}
+
+func (c *Client) validateAction(action string, condition bool, err error) error {
+	if condition {
+		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
+			action, c.config.ID, err)
+		return err
+	}
+	return nil
 }
 
 func (c Client) getBets() (Bet, error) {
