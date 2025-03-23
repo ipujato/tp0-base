@@ -173,11 +173,13 @@ func (c Client) parseBet(line string) (Bet, error) {
 func (c Client) sendBets(bets []Bet) (int, error) {
 	totalSent := 0
 
-	for i := 0; i < len(bets); i++ {
+	for i := 0; i <= len(bets); i++ {
 		data := []byte{}
 		for j := 0; j < c.config.BatchMaxAmout; j++ {
 			data = append(data, []byte(bets[i].getBetSerialized())...)
+			i++
 		}
+		log.Infof("Paquete numero %v de tamano %v", i, len(data))
 		
 		sent, err := send(data, c.conn, c.config.ID)
 		
