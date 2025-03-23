@@ -234,8 +234,8 @@ func (c Client) recvBetConfirmation() (string, error) {
 	// Esperamos recibir action: apuesta_almacenada | result: success | dni: 11111111 | numero: 1111 
 
 	sizeBuffer := make([]byte, 4)
-
-	_, err := io.ReadFull(c.conn, sizeBuffer)
+	log.Infof("action: recv size | buffer: %v | conn: %v", sizeBuffer, c.conn)
+	_, err := io.ReadFull(c.conn, sizeBuffer) 
 	if err != nil {
 		log.Errorf("action: recv size | result: fail | client_id: %v | error: %v",
 			c.config.ID,
