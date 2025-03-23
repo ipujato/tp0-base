@@ -46,7 +46,7 @@ class Server:
             ## rcv size
             expected_size = client_sock.recv(4).rstrip().decode('utf-8')
             if not expected_size.isdigit():
-                logging.error("action: receive_message | result: fail | error: invalid size received")
+                logging.error(f'action: receive_message | result: fail | error: invalid size received | excepcted_size: {expected_size}')
                 return
 
             expected_size = int(expected_size)
@@ -61,7 +61,7 @@ class Server:
                 while read_size < expected_size:
                     recvd = client_sock.recv(expected_size - read_size)
                     if not recvd:
-                        raise Exception("Full read could not be achieved")
+                        raise Exception(f'Full read could not be achieved. Read up to now: {message}')
                     message += recvd
                     read_size += len(recvd)
             except Exception as e:
