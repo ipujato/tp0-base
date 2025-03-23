@@ -98,7 +98,8 @@ class Server:
                 logging.info(f'4 socket {client_sock}')
                 bytes_sent = 0
                 logging.info(f'5 socket {client_sock}')
-
+                logging.info(f'5. msg {message}')
+                
                 client_sock.sendall(message)
                 logging.info(f'6 socket {client_sock}')
                 # try:
