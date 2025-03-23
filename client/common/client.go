@@ -187,29 +187,30 @@ func (c Client) sendBets(bet Bet) (int, error) {
 	c.createClientSocket()
 
 	data := []byte(bet.getBetSerialized())
+	print(len(data))
 	dataSize := uint32(len(data))
 	buffer := new(bytes.Buffer)
 	
 	err := binary.Write(buffer, binary.BigEndian, dataSize)
-	log.Infof("action: buffer_size | buffer: %v", buffer.Bytes())
 	
 	if err != nil {
 		log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
-			c.config.ID,
+		c.config.ID,
 		)	
 		return 0, fmt.Errorf("data size mismatch")
 	}
-
+	
 	err = binary.Write(buffer, binary.BigEndian, data)
 	
 	if err != nil {
 		log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
-			c.config.ID,
+		c.config.ID,
 		)	
 		return 0, fmt.Errorf("data size mismatch")
 	}
-
+	
 	messageSize := buffer.Len()
+	log.Infof("action: buffer_done | buffer: %v | size: %v", buffer.Bytes(), buffer.Len())
 	totalSent := 0
 	for totalSent < messageSize {
 		log.Infof("escritura de conn en sendBets")
