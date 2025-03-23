@@ -106,7 +106,9 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// enviar con cuidado de que cubra bien la cantidad
+		log.Infof("conn: %v", c.conn)
 		sentSize, err := c.sendBets(bet)
+		log.Infof("conn: %v", c.conn)
 
 		if err != nil || sentSize == 0 {
 			log.Errorf("action: send_bet | result: fail | client_id: %v | error: sent incomplete",
