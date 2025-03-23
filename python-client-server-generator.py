@@ -35,7 +35,7 @@ services:
 
 for i in range(1, cantidad_clientes + 1):
     string_compose += f"""
-    client{i}:
+  client{i}:
     container_name: client{i}
     image: client:latest
     entrypoint: /client
