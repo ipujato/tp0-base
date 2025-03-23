@@ -1,8 +1,10 @@
 package common
 
 import (
-	"bufio"
+	"bytes"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
 	"time"
 
@@ -83,29 +85,69 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
-		
-		
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		c.conn.Close()
+		// fmt.Fprintf(
+		// 	c.conn,
+		// 	"[CLIENT %v] Message N°%v\n",
+		// 	c.config.ID,
+		// 	msgID,
+		// )
 
+		// ej5
+		
+		// recibir y serializar la apuesta
+		bet, err := c.getBets()
+		
 		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			log.Errorf("action: apuesta_serializada | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
 			return
 		}
 
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
+		// enviar con cuidado de que cubra bien la cantidad
+		sentSize, err := c.sendBets(bet)
+
+		if err != nil || sentSize != int(bet.getBetSize()) {
+			log.Errorf("action: send_bet | result: fail | client_id: %v | error: sent incomplete",
+				c.config.ID,
+			)
+			return
+		}
+
+		// recibir respuesta con cuidado de recibir el tamaño de la respuesta
+		msg, err := c.recvBetConfirmation()
+
+		if err != nil || msg == "" {
+			log.Errorf("action: recvBetConfirmation | result: fail | client_id: %v | error: recv incomplete",
+				c.config.ID,
+			)
+			return
+		}
+
+		log.Infof("confimacion recivida | result: succes | msg: %s", msg)
+
+		log.Infof("apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
+
+		c.conn.Close()
+
+		// log action: apuesta_enviada | result: success | dni: ${DNI} | numero: ${NUMERO}
+
+		
+		// msg, err := bufio.NewReader(c.conn).ReadString('\n')
+		
+		// if err != nil {
+		// 	log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+		// 		c.config.ID,
+		// 		err,
+		// 	)
+		// 	return
+		// }
+
+		// log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+		// 	c.config.ID,
+		// 	msg,
+		// )
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
@@ -120,4 +162,101 @@ func (c *Client) ShutHandle() {
 	c.conn.Close()
 	c.running = false
 	log.Infof("action: end handle | result: success" )
+}
+
+func (c Client) getBets() (Bet, error) {
+	nombre := os.Getenv("NOMBRE")
+	apellido := os.Getenv("APELLIDO")
+	documento := os.Getenv("DOCUMENTO")
+	nacimiento := os.Getenv("NACIMIENTO")
+	numero := os.Getenv("NUMERO")
+
+	var bet = Bet{
+		Agencia: c.config.ID,
+		Nombre:     nombre,
+		Apellido:   apellido,
+		Documento:  documento,
+		Nacimiento: nacimiento,
+		Numero:     numero,
+	}
+
+	return bet, nil
+}
+
+func (c Client) sendBets(bet Bet) (int, error) {
+	data := bet.getBetSerialized()
+	dataSize := bet.getBetSize()
+	buffer := new(bytes.Buffer)
+	
+	sizeSent := 0
+	binary.Write(buffer, binary.BigEndian, dataSize)
+	
+	for sizeSent < 4 {
+		n, err := c.conn.Write(buffer.Bytes())
+		if err != nil {
+			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+			return sizeSent, err
+		}
+		sizeSent += n
+	}
+
+	if int(dataSize) != len(data) {
+			log.Criticalf("action: send_bet | result: fail | client_id: %v | error: data size mismatch",
+			c.config.ID,
+		)
+		return 0, fmt.Errorf("data size mismatch")
+	}
+
+	binary.Write(buffer, binary.BigEndian, []byte(data))
+
+	totalSent := 0
+	for totalSent < int(dataSize) {
+		n, err := c.conn.Write(buffer.Bytes())
+		if err != nil {
+			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return totalSent, err
+		}
+		totalSent += n
+	}
+
+	log.Infof("action: send_bet | result: success | client_id: %v | bytes_sent: %v",
+		c.config.ID,
+		totalSent,
+	)
+
+	return totalSent, nil
+}
+
+func (c Client) recvBetConfirmation() (string, error) {
+	// Esperamos recibir action: apuesta_almacenada | result: success | dni: 11111111 | numero: 1111 
+
+	sizeBuffer := make([]byte, 4)
+
+	_, err := io.ReadFull(c.conn, sizeBuffer)
+	if err != nil {
+		log.Errorf("action: recv size | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return "", err
+	}
+
+	msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
+	msgBuffer := make([]byte, msgSize)
+	_, err = io.ReadFull(c.conn, msgBuffer)
+	if err != nil {
+		log.Errorf("action: recv msg | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return "", err
+	}
+
+	return string(msgBuffer), nil
 }
