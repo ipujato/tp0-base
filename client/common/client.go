@@ -126,7 +126,7 @@ func (c *Client) StartClientLoop() {
 
 		log.Infof("confimacion recibida | result: succes | msg: %s", msg)
 
-		log.Infof("apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
+		log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
 
 		c.running = false
 		// log action: apuesta_enviada | result: success | dni: ${DNI} | numero: ${NUMERO}
