@@ -42,29 +42,15 @@ class Server:
         """
         try:
             esp_siz = b''
-            read_size = 0
-            while read_size < 4:
-                    recvd = client_sock.recv(4 - read_size)
-                    if not recvd:
-                        raise Exception(f'Full read could not be achieved. Read up to now {read_size} of 4')
-                    esp_siz += recvd
-                    read_size += len(recvd)
+            esp_siz = self.__recieve_fixed_size_message(client_sock, 4)
             expected_size = int.from_bytes(esp_siz, byteorder="big")
 
-            expected_size = int(expected_size)
             if expected_size <= 0:
                 logging.error("action: receive_message | result: fail | error: non-positive size received")
                 return
 
-            read_size = 0
-            message = b''
             try:
-                while read_size < expected_size:
-                    recvd = client_sock.recv(expected_size - read_size)
-                    if not recvd:
-                        raise Exception(f'Full read could not be achieved. Read up to now: {read_size} of {expected_size}')
-                    message += recvd
-                    read_size += len(recvd)
+                message = self.__recieve_fixed_size_message(client_sock, expected_size)
             except Exception as e:
                 logging.error(f"action: receive_message | result: fail | error: {e}")
                 return
@@ -88,6 +74,16 @@ class Server:
         finally:
             client_sock.close()
             self.running = False
+
+    def __recieve_fixed_size_message(self, client_sock, expected_size):
+        read_size = 0
+        while read_size < expected_size:
+                recvd = client_sock.recv(expected_size - read_size)
+                if not recvd:
+                    raise Exception(f'Full read could not be achieved. Read up to now {read_size} of {expected_size}')
+                esp_siz += recvd
+                read_size += len(recvd)
+        return esp_siz
 
     def __handle_shutdown(self,  signum, frame):
         logging.info('action: shutdown | result: in_progress')
