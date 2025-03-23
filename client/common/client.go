@@ -1,10 +1,13 @@
 package common
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 
 	// ej4
@@ -53,7 +56,7 @@ func NewClient(config ClientConfig) *Client {
 // is returned
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
-	c.validateAction("connect", err != nil, err)
+	validateAction("connect", err != nil, err, c.config.ID)
 
 	c.conn = conn
 	return nil
@@ -82,23 +85,23 @@ func (c *Client) StartClientLoop() {
 		// ej5
 		
 		// recibir y serializar la apuesta
-		bet, err := c.getBets()
+		bets, err := c.getBets()
 		
-		c.validateAction("apuesta_serializada", err != nil, err)
+		validateAction("apuesta_serializada", err != nil, err, c.config.ID)
 
 		// enviar con cuidado de que cubra bien la cantidad
-		sentSize, err := c.sendBets(bet)
+		sentSize, err := c.sendBets(bets)
 
-		c.validateAction("apuesta_serializada", err != nil || sentSize == 0, err)
+		validateAction("apuesta_serializada", err != nil || sentSize == 0, err, c.config.ID)
 
 		// recibir respuesta con cuidado de recibir el tamaño de la respuesta
 		msg, err := c.recvBetConfirmation()
 
-		c.validateAction("apuesta_serializada", err != nil || msg == "", err)
+		validateAction("apuesta_serializada", err != nil || msg == "", err, c.config.ID)
 
 		log.Infof("confimacion recibida | result: succes | msg: %s", msg)
 
-		log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
+		// log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
 
 		c.running = false
 		// Wait a time between sending one message and the next one
@@ -116,82 +119,127 @@ func (c *Client) ShutHandle() {
 	log.Infof("action: end handle | result: success" )
 }
 
-func (c *Client) validateAction(action string, condition bool, err error) error {
-	if condition {
-		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
-			action, c.config.ID, err)
-		return err
-	}
-	return nil
-}
-
-func (c *Client) validateSend(action string, err error) (int, error) {
+func (c Client) getBets() ([]Bet, error) {
+	filePath := "./data/agency-" + string(c.config.ID) + ".csv"
+	bets_file, err := os.Open(filePath)
 	if err != nil {
-		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
-			action, c.config.ID, err)
-		return 0, err
+		log.Errorf("action: open_csv | result: fail | error: %v", err)
+		return nil, err
 	}
-	return 0, nil
+	defer bets_file.Close()
+
+	var bets []Bet
+	scanner := bufio.NewScanner(bets_file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		bet, err := c.parseBet(line)
+		if err != nil {
+			log.Errorf("action: parse_bet | result: fail | error: %v", err)
+			continue
+		}
+		bets = append(bets, bet)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Errorf("action: scan_file | result: fail | error: %v", err)
+		return nil, err
+	}
+
+	if len(bets) == 0 {
+		return nil, fmt.Errorf("no bets found in CSV")
+	}
+
+	log.Infof("leidas %v apuestas", len(bets))
+
+	return bets, nil
 }
 
-func (c *Client) validateRecv(action string, err error) (string, error) {
-	if err != nil {
-		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
-			action, c.config.ID, err)
-		return "", err
+func (c Client) parseBet(line string) (Bet, error) {
+	splitedString := strings.Split(line, ",")
+	if len(splitedString) != 5 {
+		return Bet{}, fmt.Errorf("invalid bet format")
 	}
-	return "", nil
-}
-
-func (c Client) getBets() (Bet, error) {
-	nombre := os.Getenv("NOMBRE")
-	apellido := os.Getenv("APELLIDO")
-	documento := os.Getenv("DOCUMENTO")
-	nacimiento := os.Getenv("NACIMIENTO")
-	numero := os.Getenv("NUMERO")
-
-	var bet = Bet{
+	bet := Bet {
 		Agencia: c.config.ID,
-		Nombre:     nombre,
-		Apellido:   apellido,
-		Documento:  documento,
-		Nacimiento: nacimiento,
-		Numero:     numero,
+		Nombre: splitedString[0],
+		Apellido: splitedString[1],
+		Documento: splitedString[2],
+		Nacimiento: splitedString[3],
+		Numero: splitedString[4],
 	}
-
-	log.Infof("bet created bet: %v", bet)
-
 	return bet, nil
 }
 
-func (c Client) sendBets(bet Bet) (int, error) {
-	data := []byte(bet.getBetSerialized())
-	
+func (c Client) sendBets(bets []Bet) (int, error) {
+	totalSent := 0
+
+	for i := 0; i < len(bets); i++ {
+		data := []byte{}
+		for j := 0; j < c.config.BatchMaxAmout; j++ {
+			data = append(data, []byte(bets[i].getBetSerialized())...)
+		}
+		
+		sent, err := send(data, c.conn, c.config.ID)
+		
+		if err != nil {
+			log.Errorf("action: batch send failed | result: fail | client_id: %v | error: %v",
+			 	c.config.ID, err)
+			return 0, err
+		}
+		totalSent += sent
+	}
+
+	return totalSent, nil
+}
+
+func send(data []byte, connection net.Conn, id string) (int, error) {
+	totalSent := 0
+	var err error
+
 	dataSize := uint32(len(data))
+
+	if dataSize > 8*1024 {
+		parcialSent := 0
+		firstHalf := data[:len(data)/2]
+		secondHalf := data[len(data)/2:]
+		parcialSent, err = send(firstHalf, connection, id)
+		if err != nil {
+			log.Errorf("action: batch send failed | result: fail | client_id: %v | error: %v",
+			 	id, err)
+			return 0, err
+		}
+		totalSent += parcialSent
+		parcialSent, err = send(secondHalf, connection, id)
+		if err != nil {
+			log.Errorf("action: batch send failed | result: fail | client_id: %v | error: %v",
+			 	id, err)
+			return 0, err
+		}
+		return (totalSent+parcialSent), nil
+	}
+
 	buffer := new(bytes.Buffer)
 	
-	err := binary.Write(buffer, binary.BigEndian, dataSize)
+	err = binary.Write(buffer, binary.BigEndian, dataSize)
 	
-	c.validateSend("buff bet size", err)
+	validateSend("buff bet size", err, id)
 	
 	err = binary.Write(buffer, binary.BigEndian, data)
 	
-	c.validateSend("buff bet", err)
+	validateSend("buff bet", err, id)
 	
 	messageSize := buffer.Len()
-	totalSent := 0
 	for totalSent < messageSize {
 		log.Infof("escritura de conn en sendBets")
-		n, err := c.conn.Write(buffer.Bytes())
-		c.validateSend("send buff", err)
+		n, err := connection.Write(buffer.Bytes())
+		validateSend("send buff", err, id)
 		totalSent += n
 	}
 
 	log.Infof("action: send_bet | result: success | client_id: %v | bytes_sent: %v",
-		c.config.ID,
+		id,
 		totalSent,
 	)
-
 	return totalSent, nil
 }
 
@@ -207,12 +255,12 @@ func (c Client) recvBetConfirmation() (string, error) {
 
 	sizeBuffer := make([]byte, 4)
 	_, err := io.ReadFull(c.conn, sizeBuffer) 
-	c.validateRecv("recv msg size", err)
+	validateRecv("recv msg size", err, c.config.ID)
 
 	msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
 	msgBuffer := make([]byte, msgSize)
 	_, err = io.ReadFull(c.conn, msgBuffer)
-	c.validateRecv("recv msg", err)
+	validateRecv("recv msg", err, c.config.ID)
 
 	c.conn.Close()
 
