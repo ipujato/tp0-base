@@ -99,7 +99,7 @@ class Server:
                 bytes_sent = 0
                 logging.info(f'5 socket {client_sock}')
 
-                client_sock.sendall(message.encode('utf-8'))
+                client_sock.sendall(message)
                 logging.info(f'6 socket {client_sock}')
                 # try:
                 #     while bytes_sent < len(message):
@@ -114,7 +114,7 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             logging.info("server cierra el socket")
-            client_sock.close()
+            # client_sock.close()
 
     def __handle_shutdown(self,  signum, frame):
         logging.info('action: shutdown | result: in_progress')
