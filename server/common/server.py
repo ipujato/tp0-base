@@ -41,7 +41,7 @@ class Server:
         client socket will also be closed
         """
         try:
-            while self.running:
+            # while self.running:
                 # # TODO: Modify the receive to avoid short-reads
                 # msg = client_sock.recv(1024).rstrip().decode('utf-8')
                 # ! recv
@@ -93,14 +93,15 @@ class Server:
                 confirmation_size = struct.pack('>I', len(confirmation_to_send))
                 message = confirmation_size + confirmation_to_send
                 bytes_sent = 0
-                try:
-                    while bytes_sent < len(message):
-                        sent = client_sock.send(message[bytes_sent:])
-                        if sent == 0:
-                            raise RuntimeError("socket connection broken")
-                        bytes_sent += sent
-                except Exception as e:
-                    logging.error(f"action: send_confirmation | result: fail | error: {e}")
+                client_sock.sendall(message)
+                # try:
+                #     while bytes_sent < len(message):
+                #         sent = client_sock.sendall(message[bytes_sent:])
+                #         if sent == 0:
+                #             raise RuntimeError("socket connection broken")
+                #         bytes_sent += sent
+                # except Exception as e:
+                #     logging.error(f"action: send_confirmation | result: fail | error: {e}")
 
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
