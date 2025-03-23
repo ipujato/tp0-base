@@ -117,6 +117,7 @@ class Server:
         logging.info('action: shutdown | result: success')
         
     def new_bet_management(self, rcvd_bets: str):
+        print("bet management")
         print(rcvd_bets)
         try:
             agencia, nombre, apellido, documento, nacimiento, numero = rcvd_bets.split('|')
