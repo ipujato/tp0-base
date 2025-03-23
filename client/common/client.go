@@ -180,6 +180,8 @@ func (c Client) getBets() (Bet, error) {
 		Numero:     numero,
 	}
 
+	log.Infof("bet created bet: %v", bet)
+
 	return bet, nil
 }
 
