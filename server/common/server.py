@@ -99,7 +99,7 @@ class Server:
                 bytes_sent = 0
                 logging.info(f'5 socket {client_sock}')
 
-                client_sock.sendall(message.encode())
+                client_sock.sendall(message.encode('utf-8'))
                 logging.info(f'6 socket {client_sock}')
                 # try:
                 #     while bytes_sent < len(message):
