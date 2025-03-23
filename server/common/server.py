@@ -49,7 +49,7 @@ class Server:
                         raise Exception(f'Full read could not be achieved. Read up to now {read_size} of 4')
                     esp_siz += recvd
                     read_size += len(recvd)
-            expected_size = struct.unpack('>I', esp_siz)[0]
+            expected_size = esp_siz.decode()
 
             expected_size = int(expected_size)
             if expected_size <= 0:
@@ -77,7 +77,7 @@ class Server:
 
             confirmation_to_send = "Bet received successfully".encode('utf-8')
 
-            confirmation_size = struct.pack('>I', len(confirmation_to_send))
+            confirmation_size = len(confirmation_to_send).encode('utf-8')
             message = confirmation_size + confirmation_to_send
             bytes_sent = 0
             
