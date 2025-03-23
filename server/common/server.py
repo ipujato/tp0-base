@@ -41,17 +41,21 @@ class Server:
         client socket will also be closed
         """
         try:
-            result = self._recive_batches(client_sock)
+            amount = [0]
+            result = self._recive_batches(client_sock, amount)
                             
 
             addr = client_sock.getpeername()
             self.clients.append(addr)
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} ')
+            if result:
+                logging.info(f'action: apuesta_recibida | result: success | cantidad: {amount[0]}')
+                answer_to_send = "Bet saved successfully".encode('utf-8')
+            else: 
+                logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
+                answer_to_send = "Bet saved unsuccessfully".encode('utf-8')
 
-            confirmation_to_send = "Bet received successfully".encode('utf-8')
-
-            confirmation_size = len(confirmation_to_send).to_bytes(4, byteorder="big")
-            message = confirmation_size + confirmation_to_send
+            confirmation_size = len(answer_to_send).to_bytes(4, byteorder="big")
+            message = confirmation_size + answer_to_send
             
             client_sock.sendall(message)
 
@@ -61,7 +65,7 @@ class Server:
             client_sock.close()
             self.running = False
 
-    def _recive_batches(self, client_sock):
+    def _recive_batches(self, client_sock, amount):
         still_receiving = True
         
         while still_receiving:
@@ -69,18 +73,22 @@ class Server:
             expected_size = int.from_bytes(esp_siz, byteorder="big")
 
             if expected_size <= 0:
-                logging.error("action: receive_message | result: fail | error: non-positive size received")
+                logging.error("action: receive_batch | result: fail | error: non-positive size received")
                 return False
 
             try:
                 message = self.__recieve_fixed_size_message(client_sock, expected_size)
             except Exception as e:
-                logging.error(f"action: receive_message | result: fail | error: {e}")
+                logging.error(f"action: receive_batch | result: fail | error: {e}")
                 return False
             if message.decode('utf-8') == "end":
                 still_receiving = False
             else:
-                self.new_bet_management(message.decode('utf-8'))
+                try:
+                    self.new_bet_management(message.decode('utf-8'), amount)
+                except Exception as e:
+                    logging.error(f"action: saving batch | result: fail | error: {e}")
+                    return False
             
         return True
 
@@ -103,21 +111,22 @@ class Server:
             client.close()
         logging.info('action: shutdown | result: success')
         
-    def new_bet_management(self, rcvd_bets: str):
-        print("bet management")
-        print(rcvd_bets)
-        try:
-            agencia, nombre, apellido, documento, nacimiento, numero = rcvd_bets.split('|')
-            logging.info(f'action: new_bet_management | result: success | agencia: {agencia} | nombre: {nombre} | apellido: {apellido} | documento: {documento} | nacimiento: {nacimiento} | numero: {numero}')
+    def new_bet_management(self, rcvd_bets, amount):
+        # print("bet management")
+        bets = []
+        for bet in rcvd_bets.split('\n'):
+            bet = bet.strip()
+            if bet:
+                try:
+                    agencia, nombre, apellido, documento, nacimiento, numero = bet.split('|')
+                    bet = Bet(agencia, nombre, apellido, documento, nacimiento, numero)
+                    bets.append(bet)
+                    amount[0] += 1
+                except Exception as e:
+                    logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
 
-            bets = []
-            bet = Bet(agencia, nombre, apellido, documento, nacimiento, numero)
-            bets.append(bet)
-            store_bets(bets)
-            logging.info(f'action: apuesta_almacenada | result: success | dni: {documento} | numero: {numero}')
-
-        except Exception as e:
-            logging.error(f"action: new_bet_management | result: fail | error: {e} | {rcvd_bets}")
+        store_bets(bets)
+        logging.info('action: bets almacenadas')
 
     def __accept_new_connection(self):
         """
