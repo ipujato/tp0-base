@@ -69,6 +69,7 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop() {
 	//ej4
 	go c.ShutHandle()
+	c.createClientSocket()
 	
 	log.Infof("action: loop_starts | result: success | client_id: %v", c.config.ID)
 
@@ -189,8 +190,6 @@ func (c Client) getBets() (Bet, error) {
 }
 
 func (c Client) sendBets(bet Bet) (int, error) {
-	c.createClientSocket()
-
 	data := []byte(bet.getBetSerialized())
 	
 	dataSize := uint32(len(data))
