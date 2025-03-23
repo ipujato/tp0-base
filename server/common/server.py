@@ -83,7 +83,7 @@ class Server:
 
                 addr = client_sock.getpeername()
                 self.clients.append(addr)
-                logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {message}')
+                logging.info(f'action: receive_message | result: success | ip: {addr[0]} ')
                 # logging.info(f'1 socket {client_sock}')
                 # ! confirm
 
