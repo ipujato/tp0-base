@@ -46,7 +46,7 @@ class Server:
                 # msg = client_sock.recv(1024).rstrip().decode('utf-8')
                 # ! recv
                 ## rcv size
-                esp_siz = b""
+                esp_siz = b''
                 read_size = 0
                 while read_size < 4:
                         recvd = client_sock.recv(4 - read_size)
@@ -65,7 +65,7 @@ class Server:
 
                 ## rcv msg
                 read_size = 0
-                message = b""
+                message = b''
                 try:
                     while read_size < expected_size:
                         recvd = client_sock.recv(expected_size - read_size)
@@ -79,7 +79,7 @@ class Server:
                     
                 # ! store bet
                 
-                self.new_bet_management(message)
+                self.new_bet_management(message.decode('utf-8'))
 
                 # # TODO: Modify the send to avoid short-writes
 
