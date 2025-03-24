@@ -2,7 +2,7 @@ package common
 
 import (
 	"io"
-	"runtime/debug"
+	"runtime"
 )
 
 func validateAction(action string, condition bool, err error, id string) error {
@@ -24,11 +24,21 @@ func validateSend(action string, err error, id string) (int, error) {
 }
 
 func validateRecv(action string, err error, id string) (string, error) {
-	if err != nil && err != io.EOF{
-		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
-			action, id, err)
-		log.Errorf("stack trace: %v", debug.Stack())
-		return "", err
+	if err != nil {
+		if err == io.EOF {
+			log.Infof("action: %s | result: EOF | client_id: %v", action, id)
+			return "", nil
+		}
+
+		// Obtener el backtrace manualmente
+		stackBuf := make([]byte, 1024*8) // 8 KB de buffer para la pila
+		n := runtime.Stack(stackBuf, false)
+		stackTrace := string(stackBuf[:n])
+
+		log.Infof("action: %s | result: fail | client_id: %v | error: %v", action, id, err)
+		log.Infof("stack trace: %s", stackTrace) // Captura más precisa del stack trace
+
+		return "",err
 	}
-	return "", nil
+	return "",nil
 }
