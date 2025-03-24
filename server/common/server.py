@@ -139,7 +139,7 @@ class Server:
             logging.info(f"listo barrera | agency_num: {agency_num}")
         except:
             logging.error(f"murio la barrera | agency_num: {agency_num}")
-            return
+            return self.send_winners(agency_num)
         self.__get_winners()
         logging.info('action: sorteo | result: success')
         for agency in self.agencies:
