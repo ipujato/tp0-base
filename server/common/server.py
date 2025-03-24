@@ -138,7 +138,7 @@ class Server:
             self.barrier.wait(timeout=10)  # Espera un máximo de 10 segundos en la barrera
             logging.info(f"listo barrera | agency_num: {agency_num}")
         except:
-            logging.error("action: barrier_wait | result: fail | error: BrokenBarrierError")
+            logging.error("murio la barrera")
             return
         self.__get_winners()
         logging.info('action: sorteo | result: success')
