@@ -135,7 +135,7 @@ class Server:
         #     if ready:
         try:
             logging.info(f"esperando barrera | agency_num: {agency_num}")
-            self.barrier.wait(timeout=10)  # Espera un máximo de 10 segundos en la barrera
+            self.barrier.wait()  # Espera un máximo de 10 segundos en la barrera
             logging.info(f"listo barrera | agency_num: {agency_num}")
         except:
             logging.error(f"murio la barrera | agency_num: {agency_num}")
