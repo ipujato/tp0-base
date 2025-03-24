@@ -19,7 +19,7 @@ except:
 if cantidad_clientes < 0:
     raise Exception("Se debe recibir como minimo 1 cliente.")
 
-string_compose = """name: tp0
+string_compose = f"""name: tp0
 services:
   server:
     container_name: server
@@ -27,6 +27,7 @@ services:
     entrypoint: python3 /main.py
     environment:
       - PYTHONUNBUFFERED=1
+      - EXPECTED_CLIENTS={cantidad_clientes}
     volumes:
       - ./server/config.ini:/config.ini
     networks:

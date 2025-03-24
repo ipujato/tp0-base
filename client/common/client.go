@@ -219,8 +219,8 @@ func send(data []byte, connection net.Conn, id string) (int, error) {
 	messageSize := buffer.Len()
 	for totalSent < messageSize {
 		// log.Infof("escritura de conn en sendBets")
-		n, err := connection.Write(buffer.Bytes())
-		validateSend("send buff", err, id)
+		n, _ := connection.Write(buffer.Bytes())
+		// validateSend("send buff", err, id)
 		totalSent += n
 	}
 

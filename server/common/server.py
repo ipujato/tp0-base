@@ -1,8 +1,10 @@
+import os
 import socket
 import logging
 import signal
 from .utils import *
 from .agency import *
+import time
 
 
 class Server:
@@ -15,7 +17,8 @@ class Server:
         # ej4
         self.agencies = []
         self.running = True
-        self.clients_ready = 0
+        self.expected_clients = int(os.getenv('EXPECTED_CLIENTS', '0'))
+        logging.info(self.expected_clients)
         self.winners = []
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
 
@@ -105,7 +108,7 @@ class Server:
                     logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
-        logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
+        # logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
         store_bets(bets)
 
     def __accept_new_connection(self):
@@ -129,20 +132,24 @@ class Server:
             return None
         
     def __send_winners(self):
-        self.clients_ready += 1
-        logging.info('entre a send winners')
-        if self.clients_ready == len(self.agencies):
-            self.__get_winners()
-            logging.info('action: sorteo | result: success')
-            for client in self.agencies:
-                client.check_for_winners(self.winners)
+        if len(self.agencies) == self.expected_clients:
+            ready = True
+            for agency in self.agencies:
+                if not agency.is_ready():
+                    ready = False
+            
+            if ready:
+                self.__get_winners()
+                logging.info('action: sorteo | result: success')
+                for agency in self.agencies:
+                    agency.check_for_winners(self.winners)
                 
     def __get_winners(self):
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 self.winners.append(bet)
-        logging.info(f'ganaron en total: {len(self.winners)}')
+        logging.info(f'ganaron en total: {len(self.winners)} para {len(self.agencies)} de {self.expected_clients}')
 
     def __add_agency(self, agency_num, conn):
         self.agencies.append(Agency(int(agency_num), conn, self))

@@ -7,14 +7,14 @@ class Agency:
         self.agency_num = agency_num
         self.connection = client_connection
         self.loteria_nacional = loteria_nacional
+        self.ready = False
 
     def close(self):
         self.connection.close()
     
     def recieve_bets(self):
         amount = [0]
-        result = self.__recive_batches(amount)
-                            
+        result = self.__recive_batches(amount)        
 
         if result:
             logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
@@ -44,6 +44,7 @@ class Agency:
                 return False
             if message.decode('utf-8').__contains__("Agencia") and message.decode('utf-8').__contains__("ha finalizado la carga"):
                 still_receiving = False
+                self.ready = True
 
             else:
                 try:
@@ -59,4 +60,7 @@ class Agency:
         msg = "Ganaron:" + str(len(client_winners))
         logging.info(f"Para la agencia {self.agency_num} "+msg)
         self.connection.send(msg.encode('utf-8'))
+
+    def is_ready(self):
+        return self.ready
 
