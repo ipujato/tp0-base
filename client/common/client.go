@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -278,13 +277,8 @@ func (c* Client) reciveWinners() bool {
 		return false
 	}
 	cant_ganadores := parts[1]
-	cantidad, err := strconv.Atoi(cant_ganadores)
-	if err != nil {
-		log.Errorf("action: parse_winners | result: fail | error: %v", err)
-		return false
-	}
 
-	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", cantidad)
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %s", cant_ganadores)
 
 	return true
 }
