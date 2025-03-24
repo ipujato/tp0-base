@@ -49,10 +49,10 @@ class Server:
             self.clients.append(addr)
             if result:
                 logging.info(f'action: apuesta_recibida | result: success | cantidad: {amount[0]}')
-                answer_to_send = "Bet saved successfully".encode('utf-8')
+                answer_to_send = "{amount[0]} bets saved successfully".encode('utf-8')
             else: 
                 logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
-                answer_to_send = "Bet saved unsuccessfully".encode('utf-8')
+                answer_to_send = "{amount[0]} bet saved unsuccessfully".encode('utf-8')
 
             confirmation_size = len(answer_to_send).to_bytes(4, byteorder="big")
             message = confirmation_size + answer_to_send
