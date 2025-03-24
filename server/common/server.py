@@ -101,7 +101,7 @@ class Server:
                     logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
-        logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
+        # logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
         # store_bets(bets)
         self.bets_monitor.store_bets(bets)
 
@@ -133,7 +133,13 @@ class Server:
         #             ready = False
             
         #     if ready:
-        self.barrier.wait()
+        try:
+            logging.info(f"action: waiting_at_barrier | agency_num: {agency_num}")
+            self.barrier.wait(timeout=10)  # Espera un máximo de 10 segundos en la barrera
+            logging.info(f"action: passed_barrier | agency_num: {agency_num}")
+        except:
+            logging.error("action: barrier_wait | result: fail | error: BrokenBarrierError")
+            return
         self.__get_winners()
         logging.info('action: sorteo | result: success')
         for agency in self.agencies:

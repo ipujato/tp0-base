@@ -99,7 +99,7 @@ func (c *Client) StartClientLoop() {
 	// enviar con cuidado de que cubra bien la cantidad
 	sentSize, err := c.sendBets(bets)
 	
-	// time.Sleep(c.config.LoopPeriod)
+	time.Sleep(c.config.LoopPeriod)
 
 	validateAction("apuesta_serializada", err != nil || sentSize == 0, err, c.config.ID)
 	
