@@ -48,10 +48,10 @@ class Server:
             addr = client_sock.getpeername()
             self.clients.append(addr)
             if result:
-                logging.info(f'action: apuesta_recibida | result: success | cantidad: {amount[0]}')
+                logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
                 answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
             else: 
-                logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
+                logging.info(f'action: apuestas totales para cliente | result: fail | cantidad: {amount[0]}')
                 answer_to_send = f'{amount[0]} bet saved unsuccessfully'.encode('utf-8')
 
             confirmation_size = len(answer_to_send).to_bytes(4, byteorder="big")
@@ -63,7 +63,6 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
-            self.running = False
 
     def _recive_batches(self, client_sock, amount):
         still_receiving = True
@@ -114,6 +113,7 @@ class Server:
     def new_bet_management(self, rcvd_bets, amount):
         # print("bet management")
         bets = []
+        counter = 0
         for bet in rcvd_bets.split('\n'):
             bet = bet.strip()
             if bet:
@@ -122,11 +122,13 @@ class Server:
                     bet = Bet(agencia, nombre, apellido, documento, nacimiento, numero)
                     bets.append(bet)
                     amount[0] += 1
+                    counter += 1
                 except Exception as e:
+                    logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
-
+        
+        logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
         store_bets(bets)
-        logging.info('action: bets almacenadas')
 
     def __accept_new_connection(self):
         """

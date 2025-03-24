@@ -17,39 +17,60 @@ services:
     entrypoint: /client
     environment:
       - CLI_ID=1
+      - NOMBRE=Santiago
+      - APELLIDO=Lorca
+      - DOCUMENTO=30904465
+      - NACIMIENTO=1999-03-17
+      - NUMERO=7574
+      - BETS_FILE=/data/agency-1.csv
     volumes:
       - ./client/config.yaml:/config.yaml
+      - .data/agency-1.csv:/data/agency-1.csv
     networks:
       - testing_net
     depends_on:
       - server
-
+  
   client2:
     container_name: client2
     image: client:latest
     entrypoint: /client
     environment:
       - CLI_ID=2
+      - NOMBRE=Julian
+      - APELLIDO=Alvarez
+      - DOCUMENTO=40912301
+      - NACIMIENTO=2000-01-31
+      - NUMERO=9999
+      - BETS_FILE=/data/agency-2.csv
     volumes:
       - ./client/config.yaml:/config.yaml
+      - .data/agency-2.csv:/data/agency-2.csv
     networks:
       - testing_net
     depends_on:
       - server
-
+  
   client3:
     container_name: client3
     image: client:latest
     entrypoint: /client
     environment:
       - CLI_ID=3
+      - NOMBRE=Enzo
+      - APELLIDO=Fernandez
+      - DOCUMENTO=33912301
+      - NACIMIENTO=2001-01-17
+      - NUMERO=8524
+      - BETS_FILE=/data/agency-3.csv
     volumes:
       - ./client/config.yaml:/config.yaml
+      - .data/agency-3.csv:/data/agency-3.csv
     networks:
       - testing_net
     depends_on:
       - server
-
+  
 networks:
   testing_net:
     ipam:

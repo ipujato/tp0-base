@@ -179,7 +179,6 @@ func (c Client) sendBets(bets []Bet) (int, error) {
 			data = append(data, []byte(bets[i].getBetSerialized())...)
 			i++
 		}
-		log.Infof("Paquete numero %v de tamano %v", i, len(data))
 		
 		sent, err := send(data, c.conn, c.config.ID)
 		
@@ -202,26 +201,6 @@ func send(data []byte, connection net.Conn, id string) (int, error) {
 
 	dataSize := uint32(len(data))
 
-	if dataSize > 8*1024 {
-		parcialSent := 0
-		firstHalf := data[:len(data)/2]
-		secondHalf := data[len(data)/2:]
-		parcialSent, err = send(firstHalf, connection, id)
-		if err != nil {
-			log.Errorf("action: batch send failed | result: fail | client_id: %v | error: %v",
-			 	id, err)
-			return 0, err
-		}
-		totalSent += parcialSent
-		parcialSent, err = send(secondHalf, connection, id)
-		if err != nil {
-			log.Errorf("action: batch send failed | result: fail | client_id: %v | error: %v",
-			 	id, err)
-			return 0, err
-		}
-		return (totalSent+parcialSent), nil
-	}
-
 	buffer := new(bytes.Buffer)
 	
 	err = binary.Write(buffer, binary.BigEndian, dataSize)
@@ -234,16 +213,16 @@ func send(data []byte, connection net.Conn, id string) (int, error) {
 	
 	messageSize := buffer.Len()
 	for totalSent < messageSize {
-		log.Infof("escritura de conn en sendBets")
+		// log.Infof("escritura de conn en sendBets")
 		n, err := connection.Write(buffer.Bytes())
 		validateSend("send buff", err, id)
 		totalSent += n
 	}
 
-	log.Infof("action: send_bet | result: success | client_id: %v | bytes_sent: %v",
-		id,
-		totalSent,
-	)
+	// log.Infof("action: send_bet | result: success | client_id: %v | bytes_sent: %v",
+	// 	id,
+	// 	totalSent,
+	// )
 	return totalSent, nil
 }
 
