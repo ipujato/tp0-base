@@ -2,6 +2,7 @@ import os
 import socket
 import logging
 import signal
+import traceback
 from .utils import *
 from .agency import *
 import time
@@ -36,7 +37,8 @@ class Server:
         while self.running:
             client_sock = self.__accept_new_connection()
             if client_sock != None:
-                self.__handle_client_connection(Connection(client_sock))
+                conn = Connection(client_sock)
+                self.__handle_client_connection(conn)
 
     def __handle_client_connection(self, client_connection):
         """
@@ -79,7 +81,8 @@ class Server:
             self.__send_winners()
 
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e}")
+            traceback.print_exc()
         finally:
             client_connection.close()
 
@@ -108,7 +111,7 @@ class Server:
                     logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
-        # logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
+        logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
         store_bets(bets)
 
     def __accept_new_connection(self):
@@ -142,7 +145,9 @@ class Server:
                 self.__get_winners()
                 logging.info('action: sorteo | result: success')
                 for agency in self.agencies:
+                    logging.info(f'agencia n: {agency.agency_num}')
                     agency.check_for_winners(self.winners)
+                    return 
                 
     def __get_winners(self):
         bets = load_bets()

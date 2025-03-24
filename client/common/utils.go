@@ -1,5 +1,7 @@
 package common
 
+import "io"
+
 func validateAction(action string, condition bool, err error, id string) error {
 	if condition {
 		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
@@ -19,7 +21,7 @@ func validateSend(action string, err error, id string) (int, error) {
 }
 
 func validateRecv(action string, err error, id string) (string, error) {
-	if err != nil {
+	if err != nil && err != io.EOF{
 		log.Errorf("action: %s | result: fail | client_id: %v | error: %v",
 			action, id, err)
 		return "", err

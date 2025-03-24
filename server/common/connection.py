@@ -1,4 +1,4 @@
-import socket
+import logging
 
 class Connection:
     def __init__(self, client_sock):
@@ -18,8 +18,12 @@ class Connection:
                 read_size += len(recvd)
         return esp_siz
     
-    def send(self, message):
-        confirmation_size = len(message).to_bytes(4, byteorder="big")
-        full_msg = confirmation_size + message
+    def send(self, encoded_message):
+        if self.sock.fileno() == -1:  # El file descriptor -1 indica socket cerrado
+            logging.error("action: send | result: fail | error: Trying to send on closed socket")
+            return
+        print(encoded_message.decode('utf-8'))
+        message_size = len(encoded_message).to_bytes(4, byteorder="big")
+        full_msg = message_size + encoded_message
         
         self.sock.sendall(full_msg)

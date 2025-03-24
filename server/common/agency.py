@@ -18,12 +18,12 @@ class Agency:
 
         if result:
             logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
-            answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
+            # answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
         else: 
             logging.info(f'action: apuestas totales para cliente | result: fail | cantidad: {amount[0]}')
-            answer_to_send = f'{amount[0]} bet saved unsuccessfully'.encode('utf-8')
+            # answer_to_send = f'{amount[0]} bet saved unsuccessfully'.encode('utf-8')
 
-        self.connection.send(answer_to_send)
+        # self.connection.send(answer_to_send)
 
 
     def __recive_batches(self, amount):
@@ -57,8 +57,7 @@ class Agency:
     
     def check_for_winners(self, winners):
         client_winners = [bet for bet in winners if bet.agency == self.agency_num]
-        msg = "Ganaron:" + str(len(client_winners))
-        logging.info(f"Para la agencia {self.agency_num} "+msg)
+        msg = "Ganaron: " + str(len(client_winners))
         self.connection.send(msg.encode('utf-8'))
 
     def is_ready(self):
