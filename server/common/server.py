@@ -101,7 +101,7 @@ class Server:
                     logging.info(f'action: apuesta_recibida | result: fail | cantidad: {amount[0]}')
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
-        # logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
+        logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
         # store_bets(bets)
         self.bets_monitor.store_bets(bets)
 
