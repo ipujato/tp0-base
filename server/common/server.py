@@ -134,9 +134,9 @@ class Server:
             
         #     if ready:
         try:
-            logging.info(f"action: waiting_at_barrier | agency_num: {agency_num}")
+            logging.info(f"esperando barrera | agency_num: {agency_num}")
             self.barrier.wait(timeout=10)  # Espera un máximo de 10 segundos en la barrera
-            logging.info(f"action: passed_barrier | agency_num: {agency_num}")
+            logging.info(f"listo barrera | agency_num: {agency_num}")
         except:
             logging.error("action: barrier_wait | result: fail | error: BrokenBarrierError")
             return
