@@ -56,29 +56,12 @@ class Server:
                 return False
             
             message = client_connection.recieve_fixed_size_message(expected_size).decode('utf-8')
-            
-            position = self.__add_agency(message.split(':')[1], client_connection)
+            agency_num = message.split(':')[1]
+            position = self.__add_agency(agency_num, client_connection)
 
-            self.agencies[position].recieve_bets()
+            self.agencies[position].recieve_msg()
 
-
-            # amount = [0]
-            # result = self.__recive_batches(client_sock, amount)
-                            
-
-            # if result:
-            #     logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
-            #     answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
-            # else: 
-            #     logging.info(f'action: apuestas totales para cliente | result: fail | cantidad: {amount[0]}')
-            #     answer_to_send = f'{amount[0]} bet saved unsuccessfully'.encode('utf-8')
-
-            # confirmation_size = len(answer_to_send).to_bytes(4, byteorder="big")
-            # message = confirmation_size + answer_to_send
-            
-            # client_sock.sendall(message)
-
-            self.__send_winners()
+            self.send_winners(agency_num)
 
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
@@ -134,7 +117,7 @@ class Server:
             logging.info('El socket se encuentra cerrado')
             return None
         
-    def __send_winners(self):
+    def send_winners(self, agency_num):
         if len(self.agencies) == self.expected_clients:
             ready = True
             for agency in self.agencies:
@@ -145,17 +128,27 @@ class Server:
                 self.__get_winners()
                 logging.info('action: sorteo | result: success')
                 for agency in self.agencies:
-                    logging.info(f'agencia n: {agency.agency_num}')
-                    agency.check_for_winners(self.winners)
-                    return 
+                    if agency.agency_num == agency_num:
+                        agency.check_for_winners(self.winners)
+                        break
+                return 
+            else:
+                agency.winners_not_ready()
                 
     def __get_winners(self):
+        self.winners.clear()
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 self.winners.append(bet)
-        logging.info(f'ganaron en total: {len(self.winners)} para {len(self.agencies)} de {self.expected_clients}')
 
     def __add_agency(self, agency_num, conn):
+        i = 0
+        for agency in self.agencies:
+            i += 1
+            if agency.agency_num == int(agency_num):
+                agency.update_connection(conn)
+                return i-1
+
         self.agencies.append(Agency(int(agency_num), conn, self))
         return len(self.agencies)-1

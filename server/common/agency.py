@@ -12,18 +12,25 @@ class Agency:
     def close(self):
         self.connection.close()
     
-    def recieve_bets(self):
+    def update_connection(self, new_connection):
+        self.connection = new_connection
+    
+    def recieve_msg(self):
         amount = [0]
+        esp_siz = self.connection.recieve_fixed_size_message(4)
+        expected_size = int.from_bytes(esp_siz, byteorder="big")
+        message = self.connection.recieve_fixed_size_message(expected_size).decode('utf-8')
+        if message == "WINNERS":
+            self.loteria_nacional.send_winners(self.agency_num)
+            return
+
         result = self.__recive_batches(amount)        
 
         if result:
             logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
-            # answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
         else: 
             logging.info(f'action: apuestas totales para cliente | result: fail | cantidad: {amount[0]}')
-            # answer_to_send = f'{amount[0]} bet saved unsuccessfully'.encode('utf-8')
 
-        # self.connection.send(answer_to_send)
 
 
     def __recive_batches(self, amount):
@@ -59,6 +66,9 @@ class Agency:
         client_winners = [bet for bet in winners if bet.agency == self.agency_num]
         msg = "Ganaron: " + str(len(client_winners))
         self.connection.send(msg.encode('utf-8'))
+
+    def winners_not_ready(self):
+        self.connection.send("NO".encode('utf-8'))
 
     def is_ready(self):
         return self.ready
