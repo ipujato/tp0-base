@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,7 +57,11 @@ func NewClient(config ClientConfig) *Client {
 // is returned
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
-	validateAction("connect", err != nil, err, c.config.ID)
+	if  err != nil {
+		log.Errorf("action: connect | result: fail | client_id: %v | error: %v",
+			c.config.ID, err)
+		return err
+	}
 	c.conn = conn
 
 	clientPresentation := "clientid: " + c.config.ID
@@ -102,7 +107,7 @@ func (c *Client) StartClientLoop() {
 		c.running = false
 		
 		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod/5)
+		time.Sleep(c.config.LoopPeriod)
 		
 	}
 	
@@ -110,19 +115,23 @@ func (c *Client) StartClientLoop() {
 	pending_results := true
 
 	for pending_results {
+		log.Infof("action: loop_get_winners | result: retry | client_id: %v", c.config.ID)
 		c.createClientSocket()
+		log.Infof("action: loop_get_winners | result: r2 | client_id: %v", c.config.ID)
 
 		// Create the connection the server in every loop iteration. Send an
 		
 		_,_ = c.askWinners()
+		log.Infof("action: loop_get_winners | result: r3 | client_id: %v", c.config.ID)
 		
 		success := c.reciveWinners()
+		log.Infof("action: loop_get_winners | result: retry | client_id: %v & %v", c.config.ID, success)
 		
 		if success {
 			pending_results = false
 		}
 		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod/2)
+		time.Sleep(c.config.LoopPeriod)
 		c.conn.Close()
 	}
 	
@@ -255,25 +264,27 @@ func (c* Client) reciveWinners() bool {
 		return false
 	}
 	msgSize := 0
-	msgBuffer := []byte{}
-	for msgSize==0 {
-		sizeBuffer := make([]byte, 4)
-		_, err := io.ReadFull(c.conn, sizeBuffer) 
-		validateRecv("recv msg size", err, c.config.ID)
-	
-		msgSize = int(binary.BigEndian.Uint32(sizeBuffer))
-		msgBuffer = make([]byte, msgSize)
-		_, err = io.ReadFull(c.conn, msgBuffer)
-		validateRecv("recv msg", err, c.config.ID)
-	}
+	sizeBuffer := make([]byte, 4)
+	_, err := io.ReadFull(c.conn, sizeBuffer) 
+	validateRecv("recv msg size", err, c.config.ID)
+
+	msgSize = int(binary.BigEndian.Uint32(sizeBuffer))
+	msgBuffer := make([]byte, msgSize)
+	_, err = io.ReadFull(c.conn, msgBuffer)
+	validateRecv("recv msg", err, c.config.ID)
 
 	parts := strings.Split(string(msgBuffer), ": ")
 	if len(parts) != 2 {
 		return false
 	}
 	cant_ganadores := parts[1]
+	cantidad, err := strconv.Atoi(cant_ganadores)
+	if err != nil {
+		log.Errorf("action: parse_winners | result: fail | error: %v", err)
+		return false
+	}
 
-	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %s", cant_ganadores)
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", cantidad)
 
 	return true
 }
