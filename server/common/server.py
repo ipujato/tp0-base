@@ -1,7 +1,6 @@
 import socket
 import logging
 import signal
-import struct
 from .utils import *
 from .agency import *
 
@@ -14,7 +13,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
 
         # ej4
-        self.clients = []
+        self.agencies = []
         self.running = True
         self.clients_ready = 0
         self.winners = []
@@ -34,9 +33,9 @@ class Server:
         while self.running:
             client_sock = self.__accept_new_connection()
             if client_sock != None:
-                self.__handle_client_connection(client_sock)
+                self.__handle_client_connection(Connection(client_sock))
 
-    def __handle_client_connection(self, client_sock):
+    def __handle_client_connection(self, client_connection):
         """
         Read message from a specific client socket and closes the socket
 
@@ -44,89 +43,53 @@ class Server:
         client socket will also be closed
         """
         try:
-            esp_siz = self.__recieve_fixed_size_message(client_sock, 4)
+            esp_siz = client_connection.recieve_fixed_size_message(4)
             expected_size = int.from_bytes(esp_siz, byteorder="big")
 
             if expected_size <= 0:
                 logging.error("action: receive_batch | result: fail | error: non-positive size received")
                 return False
-
             
-            message = self.__recieve_fixed_size_message(client_sock, expected_size).decode('utf-8')
+            message = client_connection.recieve_fixed_size_message(expected_size).decode('utf-8')
             
-            self.__add_agency(client_sock, message.split(':')[1])
+            position = self.__add_agency(message.split(':')[1], client_connection)
 
-            amount = [0]
-            result = self.__recive_batches(client_sock, amount)
+            self.agencies[position].recieve_bets()
+
+
+            # amount = [0]
+            # result = self.__recive_batches(client_sock, amount)
                             
 
-            if result:
-                logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
-                answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
-            else: 
-                logging.info(f'action: apuestas totales para cliente | result: fail | cantidad: {amount[0]}')
-                answer_to_send = f'{amount[0]} bet saved unsuccessfully'.encode('utf-8')
+            # if result:
+            #     logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
+            #     answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
+            # else: 
+            #     logging.info(f'action: apuestas totales para cliente | result: fail | cantidad: {amount[0]}')
+            #     answer_to_send = f'{amount[0]} bet saved unsuccessfully'.encode('utf-8')
 
-            confirmation_size = len(answer_to_send).to_bytes(4, byteorder="big")
-            message = confirmation_size + answer_to_send
+            # confirmation_size = len(answer_to_send).to_bytes(4, byteorder="big")
+            # message = confirmation_size + answer_to_send
             
-            client_sock.sendall(message)
+            # client_sock.sendall(message)
 
             self.__send_winners()
 
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
-            client_sock.close()
+            client_connection.close()
 
-    def __recive_batches(self, client_sock, amount):
-        still_receiving = True
-        
-        while still_receiving:
-            esp_siz = self.__recieve_fixed_size_message(client_sock, 4)
-            expected_size = int.from_bytes(esp_siz, byteorder="big")
-
-            if expected_size <= 0:
-                logging.error("action: receive_batch | result: fail | error: non-positive size received")
-                return False
-
-            try:
-                message = self.__recieve_fixed_size_message(client_sock, expected_size)
-            except Exception as e:
-                logging.error(f"action: receive_batch | result: fail | error: {e}")
-                return False
-            if message.decode('utf-8').__contains__("Agencia") and message.decode('utf-8').__contains__("ha finalizado la carga"):
-                still_receiving = False
-
-            else:
-                try:
-                    self.__new_bet_management(message.decode('utf-8'), amount)
-                except Exception as e:
-                    logging.error(f"action: saving batch | result: fail | error: {e}")
-                    return False
-            
-        return True
-
-    def __recieve_fixed_size_message(self, client_sock, expected_size):
-        read_size = 0
-        esp_siz = b''
-        while read_size < expected_size:
-                recvd = client_sock.recv(expected_size - read_size)
-                if not recvd:
-                    raise Exception(f'Full read could not be achieved. Read up to now {read_size} of {expected_size}')
-                esp_siz += recvd
-                read_size += len(recvd)
-        return esp_siz
 
     def __handle_shutdown(self,  signum, frame):
         logging.info('action: shutdown | result: in_progress')
         self.running = False
         self._server_socket.close()
-        for client in self.clients:
+        for client in self.agencies:
             client.close()
         logging.info('action: shutdown | result: success')
         
-    def __new_bet_management(self, rcvd_bets, amount):
+    def new_bet_management(self, rcvd_bets, amount):
         bets = []
         counter = 0
         for bet in rcvd_bets.split('\n'):
@@ -168,23 +131,19 @@ class Server:
     def __send_winners(self):
         self.clients_ready += 1
         logging.info('entre a send winners')
-        if self.clients_ready == len(self.clients):
+        if self.clients_ready == len(self.agencies):
             self.__get_winners()
             logging.info('action: sorteo | result: success')
-            for client in self.clients:
-                client_winners = "Cant_ganadores: " + str(len(self.winners))
-                logging.info(client_winners)
-                confirmation_size = len(client_winners).to_bytes(4, byteorder="big")
-                message = confirmation_size + client_winners.encode('utf-8')
-                client.connection.sendall(message)
-
-
+            for client in self.agencies:
+                client.check_for_winners(self.winners)
+                
     def __get_winners(self):
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 self.winners.append(bet)
-        logging.info(f'ganaron: {len(self.winners)}')
+        logging.info(f'ganaron en total: {len(self.winners)}')
 
-    def __add_agency(self, conn, agency_num):
-        self.clients.append(Agency(int(agency_num), conn))
+    def __add_agency(self, agency_num, conn):
+        self.agencies.append(Agency(int(agency_num), conn, self))
+        return len(self.agencies)-1
