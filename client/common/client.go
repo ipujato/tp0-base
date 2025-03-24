@@ -113,12 +113,11 @@ func (c *Client) StartClientLoop() {
 		c.createClientSocket()
 
 		// Create the connection the server in every loop iteration. Send an
-		log.Infof("action: loop_get_winners | result: success | client_id: %v", c.config.ID)
 		
 		_,_ = c.askWinners()
-
+		
 		success := c.reciveWinners()
-
+		
 		if success {
 			pending_results = false
 		}
@@ -127,6 +126,7 @@ func (c *Client) StartClientLoop() {
 		c.conn.Close()
 	}
 	
+	log.Infof("action: loop_get_winners | result: success | client_id: %v", c.config.ID)
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
