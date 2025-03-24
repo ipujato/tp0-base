@@ -114,7 +114,7 @@ func (c *Client) StartClientLoop() {
 	// pending_results := true
 
 	// for pending_results {
-	c.createClientSocket()
+	// c.createClientSocket()
 
 	// Create the connection the server in every loop iteration. Send an
 	
