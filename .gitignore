@@ -3,6 +3,3 @@
 
 # Executables
 bin/
-
-# Descomprimido localmente
-*.csv
