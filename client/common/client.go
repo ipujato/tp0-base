@@ -57,8 +57,11 @@ func NewClient(config ClientConfig) *Client {
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
 	validateAction("connect", err != nil, err, c.config.ID)
-
 	c.conn = conn
+
+	clientPresentation := "clientid: " + c.config.ID
+	send([]byte(clientPresentation), c.conn, c.config.ID)
+
 	return nil
 }
 

@@ -3,6 +3,7 @@ import logging
 import signal
 import struct
 from .utils import *
+from .agency import *
 
 
 class Server:
@@ -43,11 +44,22 @@ class Server:
         client socket will also be closed
         """
         try:
+            esp_siz = self.__recieve_fixed_size_message(client_sock, 4)
+            expected_size = int.from_bytes(esp_siz, byteorder="big")
+
+            if expected_size <= 0:
+                logging.error("action: receive_batch | result: fail | error: non-positive size received")
+                return False
+
+            
+            message = self.__recieve_fixed_size_message(client_sock, expected_size).decode('utf-8')
+            
+            self.__add_agency(client_sock, message.split(':')[1])
+
             amount = [0]
             result = self.__recive_batches(client_sock, amount)
                             
 
-            self.clients.append(client_sock)
             if result:
                 logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
                 answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
@@ -147,6 +159,7 @@ class Server:
             logging.info('action: accept_connections | result: in_progress')
             c, addr = self._server_socket.accept()
             logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+            
             return c
         except:
             logging.info('El socket se encuentra cerrado')
@@ -163,7 +176,7 @@ class Server:
                 logging.info(client_winners)
                 confirmation_size = len(client_winners).to_bytes(4, byteorder="big")
                 message = confirmation_size + client_winners.encode('utf-8')
-                client.sendall(message)
+                client.connection.sendall(message)
 
 
     def __get_winners(self):
@@ -172,3 +185,6 @@ class Server:
             if has_won(bet):
                 self.winners.append(bet)
         logging.info(f'ganaron: {len(self.winners)}')
+
+    def __add_agency(self, conn, agency_num):
+        self.clients.append(Agency(int(agency_num), conn))
