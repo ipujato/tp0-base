@@ -102,7 +102,7 @@ func (c *Client) StartClientLoop() {
 		log.Infof("confimacion recibida | result: succes | msg: %s", msg)
 
 		// log.Infof("action: apuesta_enviada | result: success | dni: %s | numero: %s", bet.Documento, bet.Numero)
-
+		
 		c.running = false
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
@@ -190,7 +190,9 @@ func (c Client) sendBets(bets []Bet) (int, error) {
 		totalSent += sent
 	}
 
-	send([]byte("end"), c.conn, c.config.ID)
+	finalizado := fmt.Sprintf("Agencia %s ha finalizado la carga", c.config.ID)
+
+	send([]byte(finalizado), c.conn, c.config.ID)
 
 	return totalSent, nil
 }
@@ -205,11 +207,11 @@ func send(data []byte, connection net.Conn, id string) (int, error) {
 	
 	err = binary.Write(buffer, binary.BigEndian, dataSize)
 	
-	validateSend("buff bet size", err, id)
+	validateSend("buff msg size", err, id)
 	
 	err = binary.Write(buffer, binary.BigEndian, data)
 	
-	validateSend("buff bet", err, id)
+	validateSend("buff msg", err, id)
 	
 	messageSize := buffer.Len()
 	for totalSent < messageSize {
@@ -223,8 +225,6 @@ func send(data []byte, connection net.Conn, id string) (int, error) {
 }
 
 func (c Client) recvBetConfirmation() (string, error) {
-	// Esperamos recibir action: apuesta_almacenada | result: success | dni: 11111111 | numero: 1111 
-
 	if c.conn == nil {
 		log.Infof("action: recv size | result: fail | client_id: %v | error: nil conn",
 			c.config.ID,
@@ -241,7 +241,39 @@ func (c Client) recvBetConfirmation() (string, error) {
 	_, err = io.ReadFull(c.conn, msgBuffer)
 	validateRecv("recv msg", err, c.config.ID)
 
+	c.reciveWinners()
+
 	c.conn.Close()
+
+	return string(msgBuffer), nil
+}
+
+func (c Client) reciveWinners() (string, error) {
+	log.Infof("\nentre a winners\n")
+	if c.conn == nil {
+		log.Infof("action: recv size | result: fail | client_id: %v | error: nil conn",
+			c.config.ID,
+		)
+		return "", nil
+	}
+
+	sizeBuffer := make([]byte, 4)
+	_, err := io.ReadFull(c.conn, sizeBuffer) 
+	validateRecv("recv msg size", err, c.config.ID)
+
+	msgSize := int(binary.BigEndian.Uint32(sizeBuffer))
+	msgBuffer := make([]byte, msgSize)
+	_, err = io.ReadFull(c.conn, msgBuffer)
+	validateRecv("recv msg", err, c.config.ID)
+
+	parts := strings.Split(string(msgBuffer), ": ")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid winners format")
+	}
+	cant_ganadores := parts[1]
+
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %s", cant_ganadores)
+	
 
 	return string(msgBuffer), nil
 }

@@ -15,6 +15,8 @@ class Server:
         # ej4
         self.clients = []
         self.running = True
+        self.clients_ready = 0
+        self.winners = []
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
 
     def run(self):
@@ -42,11 +44,10 @@ class Server:
         """
         try:
             amount = [0]
-            result = self._recive_batches(client_sock, amount)
+            result = self.__recive_batches(client_sock, amount)
                             
 
-            addr = client_sock.getpeername()
-            self.clients.append(addr)
+            self.clients.append(client_sock)
             if result:
                 logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
                 answer_to_send = f'{amount[0]} bets saved successfully'.encode('utf-8')
@@ -59,12 +60,14 @@ class Server:
             
             client_sock.sendall(message)
 
+            self.__send_winners()
+
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
 
-    def _recive_batches(self, client_sock, amount):
+    def __recive_batches(self, client_sock, amount):
         still_receiving = True
         
         while still_receiving:
@@ -80,11 +83,12 @@ class Server:
             except Exception as e:
                 logging.error(f"action: receive_batch | result: fail | error: {e}")
                 return False
-            if message.decode('utf-8') == "end":
+            if message.decode('utf-8').__contains__("Agencia") and message.decode('utf-8').__contains__("ha finalizado la carga"):
                 still_receiving = False
+
             else:
                 try:
-                    self.new_bet_management(message.decode('utf-8'), amount)
+                    self.__new_bet_management(message.decode('utf-8'), amount)
                 except Exception as e:
                     logging.error(f"action: saving batch | result: fail | error: {e}")
                     return False
@@ -110,7 +114,7 @@ class Server:
             client.close()
         logging.info('action: shutdown | result: success')
         
-    def new_bet_management(self, rcvd_bets, amount):
+    def __new_bet_management(self, rcvd_bets, amount):
         bets = []
         counter = 0
         for bet in rcvd_bets.split('\n'):
@@ -147,3 +151,24 @@ class Server:
         except:
             logging.info('El socket se encuentra cerrado')
             return None
+        
+    def __send_winners(self):
+        self.clients_ready += 1
+        logging.info('entre a send winners')
+        if self.clients_ready == len(self.clients):
+            self.__get_winners()
+            logging.info('action: sorteo | result: success')
+            for client in self.clients:
+                client_winners = "Cant_ganadores: " + str(len(self.winners))
+                logging.info(client_winners)
+                confirmation_size = len(client_winners).to_bytes(4, byteorder="big")
+                message = confirmation_size + client_winners.encode('utf-8')
+                client.sendall(message)
+
+
+    def __get_winners(self):
+        bets = load_bets()
+        for bet in bets:
+            if has_won(bet):
+                self.winners.append(bet)
+        logging.info(f'ganaron: {len(self.winners)}')
