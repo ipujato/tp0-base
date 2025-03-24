@@ -79,56 +79,56 @@ func (c *Client) StartClientLoop() {
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		log.Infof("action: loop_iter | result: success | client_id: %v", c.config.ID)
-		
-		//ej4
-		if !c.running {
-			log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-			break
-		}
-
-		// ej5
-		
-		// recibir y serializar la apuesta
-		bets, err := c.getBets()
-		
-		validateAction("apuesta_serializada", err != nil, err, c.config.ID)
-
-		// enviar con cuidado de que cubra bien la cantidad
-		sentSize, err := c.sendBets(bets)
-		
-		time.Sleep(c.config.LoopPeriod)
-
-		validateAction("apuesta_serializada", err != nil || sentSize == 0, err, c.config.ID)
-		
-		c.running = false
-		
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-		
-	}
+	// for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
+	// Create the connection the server in every loop iteration. Send an
+	log.Infof("action: loop_iter | result: success | client_id: %v", c.config.ID)
 	
-	c.conn.Close()
-	pending_results := true
-
-	for pending_results {
-		c.createClientSocket()
-
-		// Create the connection the server in every loop iteration. Send an
-		
-		_,_ = c.askWinners()
-		
-		success := c.reciveWinners()
-		
-		if success {
-			pending_results = false
-		}
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-		c.conn.Close()
+	//ej4
+	if !c.running {
+		log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
+		// break
 	}
+
+	// ej5
+	
+	// recibir y serializar la apuesta
+	bets, err := c.getBets()
+	
+	validateAction("apuesta_serializada", err != nil, err, c.config.ID)
+
+	// enviar con cuidado de que cubra bien la cantidad
+	sentSize, err := c.sendBets(bets)
+	
+	// time.Sleep(c.config.LoopPeriod)
+
+	validateAction("apuesta_serializada", err != nil || sentSize == 0, err, c.config.ID)
+	
+	c.running = false
+	
+	// Wait a time between sending one message and the next one
+	// time.Sleep(c.config.LoopPeriod)
+	
+	// }
+	
+	// c.conn.Close()
+	// pending_results := true
+
+	// for pending_results {
+	c.createClientSocket()
+
+	// Create the connection the server in every loop iteration. Send an
+	
+	_,_ = c.askWinners()
+	
+	_ = c.reciveWinners()
+	
+	// if success {
+	// 	pending_results = false
+	// }
+	// Wait a time between sending one message and the next one
+	// time.Sleep(c.config.LoopPeriod)
+	c.conn.Close()
+	// }
 	
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }

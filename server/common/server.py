@@ -5,7 +5,8 @@ import signal
 import traceback
 from .utils import *
 from .agency import *
-import time
+from .bets_monitor import *
+from multiprocessing import Process, Barrier
 
 
 class Server:
@@ -22,23 +23,25 @@ class Server:
         logging.info(self.expected_clients)
         self.winners = []
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
+        
+        self.processes = []
+        self.bets_monitor = BetsMonitor()
+        self.barrier = Barrier(self.expected_clients)
 
     def run(self):
-        """
-        Dummy Server loop
-
-        Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
-        """
-
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
         while self.running:
             client_sock = self.__accept_new_connection()
             if client_sock != None:
                 conn = Connection(client_sock)
-                self.__handle_client_connection(conn)
+                p = Process(target=self.__handle_client_connection, args=(conn,))
+                p.start()
+                self.processes.append(p)
+        for process in self.processes:
+            try: 
+                process.join()
+                self.processes.remove(process)
+            except:
+                logging.error("Process could not be joined")
 
     def __handle_client_connection(self, client_connection):
         """
@@ -74,6 +77,10 @@ class Server:
         logging.info('action: shutdown | result: in_progress')
         self.running = False
         self._server_socket.close()
+        for process in self.processes:
+            process.terminate()
+            process.join()
+            self.processes.remove(process)
         for client in self.agencies:
             client.close()
         logging.info('action: shutdown | result: success')
@@ -95,7 +102,8 @@ class Server:
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
         logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
-        store_bets(bets)
+        # store_bets(bets)
+        self.bets_monitor.store_bets(bets)
 
     def __accept_new_connection(self):
         """
@@ -118,26 +126,28 @@ class Server:
             return None
         
     def send_winners(self, agency_num):
-        if len(self.agencies) == self.expected_clients:
-            ready = True
-            for agency in self.agencies:
-                if not agency.is_ready():
-                    ready = False
+        # if len(self.agencies) == self.expected_clients:
+        #     ready = True
+        #     for agency in self.agencies:
+        #         if not agency.is_ready():
+        #             ready = False
             
-            if ready:
-                self.__get_winners()
-                logging.info('action: sorteo | result: success')
-                for agency in self.agencies:
-                    if agency.agency_num == agency_num:
-                        agency.check_for_winners(self.winners)
-                        break
+        #     if ready:
+        self.barrier.wait()
+        self.__get_winners()
+        logging.info('action: sorteo | result: success')
+        for agency in self.agencies:
+            if agency.agency_num == agency_num:
+                agency.check_for_winners(self.winners)
+                break
                 return 
-            else:
-                agency.winners_not_ready()
+            # else:
+            #     agency.winners_not_ready()
                 
     def __get_winners(self):
         self.winners.clear()
-        bets = load_bets()
+        # bets = load_bets()
+        bets = self.bets_monitor.load_bets()
         for bet in bets:
             if has_won(bet):
                 self.winners.append(bet)
