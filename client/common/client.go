@@ -219,10 +219,6 @@ func send(data []byte, connection net.Conn, id string) (int, error) {
 		totalSent += n
 	}
 
-	// log.Infof("action: send_bet | result: success | client_id: %v | bytes_sent: %v",
-	// 	id,
-	// 	totalSent,
-	// )
 	return totalSent, nil
 }
 

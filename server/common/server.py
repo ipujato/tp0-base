@@ -111,7 +111,6 @@ class Server:
         logging.info('action: shutdown | result: success')
         
     def new_bet_management(self, rcvd_bets, amount):
-        # print("bet management")
         bets = []
         counter = 0
         for bet in rcvd_bets.split('\n'):
