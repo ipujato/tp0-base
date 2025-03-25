@@ -66,7 +66,7 @@ class Server:
             # position = self.__add_agency(agency_num, client_connection)
 
             # self.agencies_manager.acquire()
-            # self.agencies[position].recieve_msg()
+            Agency(int(agency_num), client_connection, self).recieve_msg()
             # self.agencies_manager.release()
 
             self.send_winners(agency_num, client_connection)
