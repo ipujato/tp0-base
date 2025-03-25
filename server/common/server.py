@@ -104,7 +104,6 @@ class Server:
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
         logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
-        # store_bets(bets)
         self.bets_manager.acquire()
         store_bets(bets)
         self.bets_manager.release()
@@ -144,8 +143,7 @@ class Server:
     def __get_winners(self):
         self.bets_manager.acquire()
         self.winners_manager.acquire()
-        while len(self.winners) > 0:
-            self.winners.pop()
+        self.winners[:] = []
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
