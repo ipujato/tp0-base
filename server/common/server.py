@@ -15,7 +15,6 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
 
-        self.agency = None
         self.running = True
         self.expected_clients = int(os.getenv('EXPECTED_CLIENTS', '0'))
         logging.info(self.expected_clients)
@@ -23,7 +22,9 @@ class Server:
         
         manager = Manager()
 
-        self.winners = Manager().list()
+        self.winners = manager.list()
+        self.agencies = manager.list()
+        self.agencies_manager = manager.Lock()
         self.winners_manager = manager.Lock()
         self.bets_manager = manager.Lock()
         self.barrier = Barrier(self.expected_clients)
@@ -62,9 +63,11 @@ class Server:
             
             message = client_connection.recieve_fixed_size_message(expected_size).decode('utf-8')
             agency_num = message.split(':')[1]
-            self.__add_agency(agency_num, client_connection)
+            position = self.__add_agency(agency_num, client_connection)
 
-            self.agency.recieve_msg()
+            self.agencies_manager.acquire()
+            self.agencies[position].recieve_msg()
+            self.agencies_manager.release()
 
             self.send_winners(agency_num)
 
@@ -83,8 +86,10 @@ class Server:
             process.terminate()
             process.join()
             self.processes.remove(process)
-        for client in self.agency:
+        self.agencies_manager.acquire()
+        for client in self.agencies:
             client.close()
+        self.agencies_manager.release()
         logging.info('action: shutdown | result: success')
         
     def new_bet_management(self, rcvd_bets, amount):
@@ -154,5 +159,16 @@ class Server:
         return winners_copy
 
     def __add_agency(self, agency_num, conn):
-        self.agency = (Agency(int(agency_num), conn, self))
+        self.agencies_manager.acquire()
+        i = 0
+        for agency in self.agencies:
+            i += 1
+            if agency.agency_num == int(agency_num):
+                agency.update_connection(conn)
+                self.agencies_manager.release()
+                return i-1
+
+        self.agencies.append(Agency(int(agency_num), conn, self))
+        self.agencies_manager.release()
+        return len(self.agencies)-1
         
