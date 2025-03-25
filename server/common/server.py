@@ -5,8 +5,7 @@ import signal
 import traceback
 from .utils import *
 from .agency import *
-from .bets_monitor import *
-from multiprocessing import Process, Barrier
+from multiprocessing import Process, Barrier, Manager
 
 
 class Server:
@@ -16,30 +15,33 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
 
-        # ej4
-        self.agencies = []
+        self.agency = None
         self.running = True
         self.expected_clients = int(os.getenv('EXPECTED_CLIENTS', '0'))
         logging.info(self.expected_clients)
-        self.winners = []
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
         
-        self.processes = []
-        self.bets_monitor = BetsMonitor()
+        manager = Manager()
+
+        self.winners = manager.list()
+        self.winners_manager = manager.Lock()
+        self.bets_manager = manager.Lock()
         self.barrier = Barrier(self.expected_clients)
 
     def run(self):
+        processes = []
+
         while self.running:
             client_sock = self.__accept_new_connection()
             if client_sock != None:
                 conn = Connection(client_sock)
                 p = Process(target=self.__handle_client_connection, args=(conn,))
                 p.start()
-                self.processes.append(p)
+                processes.append(p)
+
         for process in self.processes:
             try: 
                 process.join()
-                self.processes.remove(process)
             except:
                 logging.error("Process could not be joined")
 
@@ -60,9 +62,9 @@ class Server:
             
             message = client_connection.recieve_fixed_size_message(expected_size).decode('utf-8')
             agency_num = message.split(':')[1]
-            position = self.__add_agency(agency_num, client_connection)
+            self.__add_agency(agency_num, client_connection)
 
-            self.agencies[position].recieve_msg()
+            self.agency.recieve_msg()
 
             self.send_winners(agency_num)
 
@@ -81,7 +83,7 @@ class Server:
             process.terminate()
             process.join()
             self.processes.remove(process)
-        for client in self.agencies:
+        for client in self.agency:
             client.close()
         logging.info('action: shutdown | result: success')
         
@@ -103,7 +105,10 @@ class Server:
         
         logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
         # store_bets(bets)
-        self.bets_monitor.store_bets(bets)
+        self.bets_manager.acquire()
+        store_bets(bets)
+        self.bets_manager.release()
+
 
     def __accept_new_connection(self):
         """
@@ -133,38 +138,27 @@ class Server:
         #             ready = False
             
         #     if ready:
-        try:
-            logging.info(f"esperando barrera | agency_num: {agency_num}")
-            self.barrier.wait()  # Espera un máximo de 10 segundos en la barrera
-            logging.info(f"listo barrera | agency_num: {agency_num}")
-        except:
-            logging.error(f"murio la barrera | agency_num: {agency_num}")
-            return self.send_winners(agency_num)
-        self.__get_winners()
+        logging.info(f"esperando barrera | agency_num: {agency_num}")
+        self.barrier.wait()  
+        logging.info(f"listo barrera | agency_num: {agency_num}")
+        winners_copy = self.__get_winners()
         logging.info('action: sorteo | result: success')
-        for agency in self.agencies:
-            if agency.agency_num == agency_num:
-                agency.check_for_winners(self.winners)
-                break
-                return 
-            # else:
-            #     agency.winners_not_ready()
+        self.agency.check_for_winners(winners_copy)
+        
                 
     def __get_winners(self):
-        self.winners.clear()
         # bets = load_bets()
-        bets = self.bets_monitor.load_bets()
+        self.bets_manager.acquire()
+        self.winners_manager.acquire()
+        bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 self.winners.append(bet)
+        winners_copy = list(self.winners)
+        self.bets_manager.release()
+        self.winners_manager.release()
+        return winners_copy
 
     def __add_agency(self, agency_num, conn):
-        i = 0
-        for agency in self.agencies:
-            i += 1
-            if agency.agency_num == int(agency_num):
-                agency.update_connection(conn)
-                return i-1
-
-        self.agencies.append(Agency(int(agency_num), conn, self))
-        return len(self.agencies)-1
+        self.agency = (Agency(int(agency_num), conn, self))
+        
