@@ -23,7 +23,7 @@ class Server:
         
         manager = Manager()
 
-        self.winners = None
+        self.winners = Manager().list()
         self.winners_manager = manager.Lock()
         self.bets_manager = manager.Lock()
         self.barrier = Barrier(self.expected_clients)
@@ -144,14 +144,15 @@ class Server:
     def __get_winners(self):
         self.bets_manager.acquire()
         self.winners_manager.acquire()
-        self.winners = Manager().list()
+        while len(self.winners) > 0:
+            self.winners.pop()
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 self.winners.append(bet)
         winners_copy = list(self.winners)
-        self.bets_manager.release()
         self.winners_manager.release()
+        self.bets_manager.release()
         return winners_copy
 
     def __add_agency(self, agency_num, conn):
