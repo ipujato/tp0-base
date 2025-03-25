@@ -131,13 +131,6 @@ class Server:
             return None
         
     def send_winners(self, agency_num):
-        # if len(self.agencies) == self.expected_clients:
-        #     ready = True
-        #     for agency in self.agencies:
-        #         if not agency.is_ready():
-        #             ready = False
-            
-        #     if ready:
         logging.info(f"esperando barrera | agency_num: {agency_num}")
         self.barrier.wait()  
         logging.info(f"listo barrera | agency_num: {agency_num}")
@@ -147,7 +140,6 @@ class Server:
         
                 
     def __get_winners(self):
-        # bets = load_bets()
         self.bets_manager.acquire()
         self.winners_manager.acquire()
         bets = load_bets()
