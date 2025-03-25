@@ -71,8 +71,8 @@ class Server:
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
             traceback.print_exc()
-        finally:
-            client_connection.close()
+        # finally:
+        #     client_connection.close()
 
 
     def __handle_shutdown(self,  signum, frame):
