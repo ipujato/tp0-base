@@ -23,8 +23,8 @@ class Server:
         manager = Manager()
 
         self.winners = manager.list()
-        self.agencies = manager.list()
-        self.agencies_manager = manager.Lock()
+        # self.agencies = manager.list()
+        # self.agencies_manager = manager.Lock()
         self.winners_manager = manager.Lock()
         self.bets_manager = manager.Lock()
         self.barrier = Barrier(self.expected_clients)
@@ -63,13 +63,13 @@ class Server:
             
             message = client_connection.recieve_fixed_size_message(expected_size).decode('utf-8')
             agency_num = message.split(':')[1]
-            position = self.__add_agency(agency_num, client_connection)
+            # position = self.__add_agency(agency_num, client_connection)
 
-            self.agencies_manager.acquire()
-            self.agencies[position].recieve_msg()
-            self.agencies_manager.release()
+            # self.agencies_manager.acquire()
+            # self.agencies[position].recieve_msg()
+            # self.agencies_manager.release()
 
-            self.send_winners(agency_num)
+            self.send_winners(agency_num, client_connection)
 
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
@@ -86,10 +86,10 @@ class Server:
             process.terminate()
             process.join()
             self.processes.remove(process)
-        self.agencies_manager.acquire()
-        for client in self.agencies:
-            client.close()
-        self.agencies_manager.release()
+        # self.agencies_manager.acquire()
+        # for client in self.agencies:
+        #     client.close()
+        # self.agencies_manager.release()
         logging.info('action: shutdown | result: success')
         
     def new_bet_management(self, rcvd_bets, amount):
@@ -134,7 +134,7 @@ class Server:
             logging.info('El socket se encuentra cerrado')
             return None
         
-    def send_winners(self, agency_num):
+    def send_winners(self, agency_num, client_connection):
         logging.info(f"esperando barrera | agency_num: {agency_num}")
         self.barrier.wait()  
         logging.info(f"listo barrera | agency_num: {agency_num}")
@@ -142,7 +142,7 @@ class Server:
         for winner in winners_copy:
             logging.info(f"winner: {winner.number} from {winner.agency} as {agency_num}")
         logging.info('action: sorteo | result: success')
-        self.agency.check_for_winners(winners_copy)
+        Agency(int(agency_num), client_connection, self).check_for_winners(winners_copy)
         
                 
     def __get_winners(self):
