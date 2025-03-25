@@ -67,7 +67,7 @@ class Agency:
     def check_for_winners(self, winners):
         client_winners = [bet for bet in winners if bet.agency == self.agency_num]
         msg = "Ganaron: " + str(len(client_winners))
-        logging.info(msg)
+        logging.info(f'{msg} soy {self.agency_num}')
         self.connection.send(msg.encode('utf-8'))
 
     def winners_not_ready(self):
