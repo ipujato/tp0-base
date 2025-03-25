@@ -23,7 +23,7 @@ class Server:
         
         manager = Manager()
 
-        self.winners = manager.list()
+        self.winners = None
         self.winners_manager = manager.Lock()
         self.bets_manager = manager.Lock()
         self.barrier = Barrier(self.expected_clients)
@@ -142,6 +142,7 @@ class Server:
     def __get_winners(self):
         self.bets_manager.acquire()
         self.winners_manager.acquire()
+        self.winners = Manager().list()
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
