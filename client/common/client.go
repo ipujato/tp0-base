@@ -79,6 +79,7 @@ func (c *Client) StartClientLoop() {
 		if err != nil {
 			log.Errorf("action: obtencion de apuesta_serializadas | result: fail | client_id: %v | error: %v",
 				c.config.ID, err)
+			c.conn.Close()
 			c.StartClientLoop()
 		}
 
