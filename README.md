@@ -197,3 +197,9 @@ Para ejecutarlo primero debí correr `chmod +x validar-echo-server.sh` debido a 
 Para esto tuve que implementar un catch a la señal de Sigterm en ambos el cliente y el server.
 Del lado del server se implementa con signal.signal donde definimos que funcion handleará la señal. En el handler en si se loggea el cierre, se setea en un bool de estado, se cierra el socket de acceptacion y el de todos los clientes.
 Del lado del client en el go se crea un channel con os.Signal y luego signal.Notify donde se define que en ese chanel se recibira la señal. Luego se genera al comienzo del cliente la go rutine que ejecuta la function de handle, que queda bloqueada a espera de la notificacion. Al ser notificado cierra el skt y setea un bool de estado.
+
+
+
+## Ejecución de los tests
+Para la correcta ejecución de los mismos me fue necesario incluir el sleep previo al cierre de los clientes.
+![image](https://github.com/user-attachments/assets/0579bf31-7c58-45c2-ba8f-cca6c1a90b75)
