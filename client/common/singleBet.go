@@ -15,12 +15,6 @@ type Bet struct {
 }
 
 func betFromString(serialized string, agency string) (Bet, error) {
-	// var b Bet
-	// _, err := fmt.Sscanf(serialized, "%s|%s|%s|%s|%s|%s", &b.Agencia, &b.Nombre, &b.Apellido, &b.Documento, &b.Nacimiento, &b.Numero)
-	// if err != nil {
-	// 	return Bet{}, err
-	// }
-	// return b, nil
 	splitedString := strings.Split(serialized, ",")
 	if len(splitedString) != 5 {
 		return Bet{}, fmt.Errorf("invalid bet format")
