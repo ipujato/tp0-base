@@ -17,27 +17,20 @@ class Server:
 
         self.running = True
          
-        # logging.info(self.expected_clients)
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
         
         manager = Manager()
-
-        # self.winners = manager.list()
-        # self.agencies = manager.list()
-        # self.agencies_manager = manager.Lock()
-        # self.winners_manager = manager.Lock()
-        self.bets_manager = manager.Lock()
+        self.processes = []
+        self.bets_manager_lock = manager.Lock()
         self.barrier = Barrier(int(os.getenv('EXPECTED_CLIENTS', '0')))
 
     def run(self):
-        processes = []
-
         while self.running:
             client_sock = self.__accept_new_connection()
             if client_sock != None:
                 conn = Connection(client_sock)
                 p = Process(target=self.__handle_client_connection, args=(conn,))
-                processes.append(p)
+                self.processes.append(p)
                 p.start()
 
         for process in self.processes:
@@ -63,11 +56,8 @@ class Server:
             
             message = client_connection.recieve_fixed_size_message(expected_size).decode('utf-8')
             agency_num = message.split(':')[1]
-            # position = self.__add_agency(agency_num, client_connection)
 
-            # self.agencies_manager.acquire()
             Agency(int(agency_num), client_connection, self).recieve_msg()
-            # self.agencies_manager.release()
 
             self.send_winners(agency_num, client_connection)
 
@@ -86,10 +76,6 @@ class Server:
             process.terminate()
             process.join()
             self.processes.remove(process)
-        # self.agencies_manager.acquire()
-        # for client in self.agencies:
-        #     client.close()
-        # self.agencies_manager.release()
         logging.info('action: shutdown | result: success')
         
     def new_bet_management(self, rcvd_bets, amount):
@@ -109,9 +95,9 @@ class Server:
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
         logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
-        self.bets_manager.acquire()
+        self.bets_manager_lock.acquire()
         store_bets(bets)
-        self.bets_manager.release()
+        self.bets_manager_lock.release()
 
 
     def __accept_new_connection(self):
@@ -135,41 +121,18 @@ class Server:
             return None
         
     def send_winners(self, agency_num, client_connection):
-        logging.info(f"esperando barrera | agency_num: {agency_num}")
         self.barrier.wait()  
-        logging.info(f"listo barrera | agency_num: {agency_num}")
         winners_copy = self.__get_winners()
-        # for winner in winners_copy:
-        #     logging.info(f"winner: {winner.number} from {winner.agency} as {agency_num}")
         logging.info('action: sorteo | result: success')
-        Agency(int(agency_num), client_connection, self).check_for_winners(winners_copy)
-        
+        Agency(int(agency_num), client_connection, self).check_for_winners(winners_copy) 
                 
     def __get_winners(self):
         winners = []
-        self.bets_manager.acquire()
-        # self.winners_manager.acquire()
-        # self.winners[:] = []
+        self.bets_manager_lock.acquire()
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 winners.append(bet)
-        # winners_copy = list(self.winners)
-        # self.winners_manager.release()
-        self.bets_manager.release()
+        self.bets_manager_lock.release()
         return winners
-
-    def __add_agency(self, agency_num, conn):
-        self.agencies_manager.acquire()
-        i = 0
-        for agency in self.agencies:
-            i += 1
-            if agency.agency_num == int(agency_num):
-                agency.update_connection(conn)
-                self.agencies_manager.release()
-                return i-1
-
-        self.agencies.append(Agency(int(agency_num), conn, self))
-        self.agencies_manager.release()
-        return len(self.agencies)-1
         

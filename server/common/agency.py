@@ -12,15 +12,8 @@ class Agency:
     def close(self):
         self.connection.close()
     
-    def update_connection(self, new_connection):
-        self.connection = new_connection
-    
     def recieve_msg(self):
-        amount = [0]
-        # esp_siz = self.connection.recieve_fixed_size_message(4)
-        # expected_size = int.from_bytes(esp_siz, byteorder="big")
-        # message = self.connection.recieve_fixed_size_message(expected_size)
-        
+        amount = [0]        
 
         result = self.__recive_batches(amount)        
 
@@ -28,8 +21,6 @@ class Agency:
             logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
         else: 
             logging.info(f'action: apuestas totales para cliente | result: fail | cantidad: {amount[0]}')
-
-
 
     def __recive_batches(self, amount):
         still_receiving = True
@@ -63,19 +54,9 @@ class Agency:
                 except Exception as e:
                     logging.error(f"action: saving batch | result: fail | error: {e}")
                     return False
-            
-
         return True
     
     def check_for_winners(self, winners):
         client_winners = [bet for bet in winners if bet.agency == self.agency_num]
         msg = "Ganaron: " + str(len(client_winners))
-        logging.info(f'{msg} soy {self.agency_num}')
         self.connection.send(msg.encode('utf-8'))
-
-    def winners_not_ready(self):
-        self.connection.send("NO".encode('utf-8'))
-
-    def is_ready(self):
-        return self.ready
-
