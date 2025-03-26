@@ -86,6 +86,7 @@ func (c *Client) StartClientLoop() {
 	
 	c.conn.Close()
 
+	// sleep de cara a los tests
 	time.Sleep(5 * time.Second)
 	
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
@@ -111,7 +112,6 @@ func (c* Client) getBets() ([]Bet, error) {
 	scanner := bufio.NewScanner(bets_file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		// bet, err := c.parseBet(line)
 		bet, err := betFromString(line, c.config.ID)
 		if err != nil {
 			log.Errorf("action: parse_bet | result: fail | error: %v", err)
@@ -131,22 +131,6 @@ func (c* Client) getBets() ([]Bet, error) {
 
 	return bets, nil
 }
-
-// func (c* Client) parseBet(line string) (Bet, error) {
-// 	splitedString := strings.Split(line, ",")
-// 	if len(splitedString) != 5 {
-// 		return Bet{}, fmt.Errorf("invalid bet format")
-// 	}
-// 	bet := Bet {
-// 		Agencia: c.config.ID,
-// 		Nombre: splitedString[0],
-// 		Apellido: splitedString[1],
-// 		Documento: splitedString[2],
-// 		Nacimiento: splitedString[3],
-// 		Numero: splitedString[4],
-// 	}
-// 	return bet, nil
-// }
 
 func (c* Client) sendBets(bets []Bet) (int, error) {
 	totalSent := 0
