@@ -139,8 +139,8 @@ class Server:
         self.barrier.wait()  
         logging.info(f"listo barrera | agency_num: {agency_num}")
         winners_copy = self.__get_winners()
-        for winner in winners_copy:
-            logging.info(f"winner: {winner.number} from {winner.agency} as {agency_num}")
+        # for winner in winners_copy:
+        #     logging.info(f"winner: {winner.number} from {winner.agency} as {agency_num}")
         logging.info('action: sorteo | result: success')
         Agency(int(agency_num), client_connection, self).check_for_winners(winners_copy)
         
