@@ -17,14 +17,12 @@ class Agency:
     
     def recieve_msg(self):
         amount = [0]
-        esp_siz = self.connection.recieve_fixed_size_message(4)
-        expected_size = int.from_bytes(esp_siz, byteorder="big")
-        message = self.connection.recieve_fixed_size_message(expected_size)
-        if message.decode('utf-8') == "WINNERS":
-            self.loteria_nacional.send_winners(self.agency_num)
-            return
+        # esp_siz = self.connection.recieve_fixed_size_message(4)
+        # expected_size = int.from_bytes(esp_siz, byteorder="big")
+        # message = self.connection.recieve_fixed_size_message(expected_size)
+        
 
-        result = self.__recive_batches(amount, message)        
+        result = self.__recive_batches(amount)        
 
         if result:
             logging.info(f'action: apuestas totales para cliente | result: success | cantidad: {amount[0]}')
@@ -33,22 +31,10 @@ class Agency:
 
 
 
-    def __recive_batches(self, amount, message):
+    def __recive_batches(self, amount):
         still_receiving = True
         
         while still_receiving:
-            if message.decode('utf-8').__contains__("Agencia") and message.decode('utf-8').__contains__("ha finalizado la carga"):
-                still_receiving = False
-                self.ready = True
-                break
-
-            else:
-                try:
-                    self.loteria_nacional.new_bet_management(message.decode('utf-8'), amount)
-                except Exception as e:
-                    logging.error(f"action: saving batch | result: fail | error: {e}")
-                    return False
-            
             esp_siz = self.connection.recieve_fixed_size_message(4)
             expected_size = int.from_bytes(esp_siz, byteorder="big")
 
@@ -61,6 +47,23 @@ class Agency:
             except Exception as e:
                 logging.error(f"action: receive_batch | result: fail | error: {e}")
                 return False
+            
+            if message.decode('utf-8') == "WINNERS":
+                self.loteria_nacional.send_winners(self.agency_num)
+                return
+
+            if message.decode('utf-8').__contains__("Agencia") and message.decode('utf-8').__contains__("ha finalizado la carga"):
+                still_receiving = False
+                self.ready = True
+                break
+
+            else:
+                try:
+                    self.loteria_nacional.new_bet_management(message.decode('utf-8'), amount)
+                except Exception as e:
+                    logging.error(f"action: saving batch | result: fail | error: {e}")
+                    return False
+            
 
         return True
     

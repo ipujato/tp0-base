@@ -16,18 +16,18 @@ class Server:
         self._server_socket.listen(listen_backlog)
 
         self.running = True
-        self.expected_clients = int(os.getenv('EXPECTED_CLIENTS', '0'))
-        logging.info(self.expected_clients)
+         
+        # logging.info(self.expected_clients)
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
         
         manager = Manager()
 
         # self.winners = manager.list()
-        self.agencies = manager.list()
-        self.agencies_manager = manager.Lock()
+        # self.agencies = manager.list()
+        # self.agencies_manager = manager.Lock()
         # self.winners_manager = manager.Lock()
         self.bets_manager = manager.Lock()
-        self.barrier = Barrier(self.expected_clients)
+        self.barrier = Barrier(int(os.getenv('EXPECTED_CLIENTS', '0')))
 
     def run(self):
         processes = []
