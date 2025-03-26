@@ -5,7 +5,7 @@ import signal
 import traceback
 from .utils import *
 from .agency import *
-from multiprocessing import Process, Barrier, Manager
+from multiprocessing import Process, Barrier, Lock
 
 
 class Server:
@@ -19,9 +19,9 @@ class Server:
          
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
         
-        manager = Manager()
+        
         self.processes = []
-        self.bets_manager_lock = manager.Lock()
+        self.bets_lock = Lock()
         self.barrier = Barrier(int(os.getenv('EXPECTED_CLIENTS', '0')))
 
     def run(self):
@@ -95,9 +95,9 @@ class Server:
                     logging.error(f"action: new_bet_management | result: fail | error: {e} | {bet}")
         
         logging.info(f'action: apuesta_recibida | result: success | cantidad: {counter}')
-        self.bets_manager_lock.acquire()
+        self.bets_lock.acquire()
         store_bets(bets)
-        self.bets_manager_lock.release()
+        self.bets_lock.release()
 
 
     def __accept_new_connection(self):
@@ -128,11 +128,11 @@ class Server:
                 
     def __get_winners(self):
         winners = []
-        self.bets_manager_lock.acquire()
+        self.bets_lock.acquire()
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 winners.append(bet)
-        self.bets_manager_lock.release()
+        self.bets_lock.release()
         return winners
         
