@@ -19,7 +19,6 @@ class Server:
         self.agencies = []
         self.running = True
         self.expected_clients = int(os.getenv('EXPECTED_CLIENTS', '0'))
-        logging.info(self.expected_clients)
         self.winners = []
         signal.signal(signal.SIGTERM, self.__handle_shutdown)
 
@@ -60,7 +59,6 @@ class Server:
             position = self.__add_agency(agency_num, client_connection)
 
             self.agencies[position].recieve_msg()
-
             self.send_winners(agency_num)
 
         except OSError as e:
@@ -104,8 +102,6 @@ class Server:
         Function blocks until a connection to a client is made.
         Then connection created is printed and returned
         """
-
-        # ej4
         try:
             # Connection arrived
             logging.info('action: accept_connections | result: in_progress')
