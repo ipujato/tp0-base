@@ -22,10 +22,10 @@ class Server:
         
         manager = Manager()
 
-        self.winners = manager.list()
-        # self.agencies = manager.list()
-        # self.agencies_manager = manager.Lock()
-        self.winners_manager = manager.Lock()
+        # self.winners = manager.list()
+        self.agencies = manager.list()
+        self.agencies_manager = manager.Lock()
+        # self.winners_manager = manager.Lock()
         self.bets_manager = manager.Lock()
         self.barrier = Barrier(self.expected_clients)
 
@@ -37,8 +37,8 @@ class Server:
             if client_sock != None:
                 conn = Connection(client_sock)
                 p = Process(target=self.__handle_client_connection, args=(conn,))
-                p.start()
                 processes.append(p)
+                p.start()
 
         for process in self.processes:
             try: 
@@ -146,17 +146,18 @@ class Server:
         
                 
     def __get_winners(self):
+        winners = []
         self.bets_manager.acquire()
-        self.winners_manager.acquire()
-        self.winners[:] = []
+        # self.winners_manager.acquire()
+        # self.winners[:] = []
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
-                self.winners.append(bet)
-        winners_copy = list(self.winners)
-        self.winners_manager.release()
+                winners.append(bet)
+        # winners_copy = list(self.winners)
+        # self.winners_manager.release()
         self.bets_manager.release()
-        return winners_copy
+        return winners
 
     def __add_agency(self, agency_num, conn):
         self.agencies_manager.acquire()
