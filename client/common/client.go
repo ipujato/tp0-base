@@ -20,7 +20,6 @@ import (
 
 var log = logging.MustGetLogger("log")
 
-// ClientConfig Configuration used by the client
 type ClientConfig struct {
 	ID            string
 	ServerAddress string
@@ -29,7 +28,6 @@ type ClientConfig struct {
 	BatchMaxAmout int
 }
 
-// Client Entity that encapsulates how
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
@@ -37,8 +35,6 @@ type Client struct {
 	running bool
 }
 
-// NewClient Initializes a new client receiving the configuration
-// as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
@@ -51,9 +47,6 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
-// CreateClientSocket Initializes client socket. In case of
-// failure, error is printed in stdout/stderr and exit 1
-// is returned
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
 	if  err != nil {
@@ -69,45 +62,35 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
-	//ej4
 	go c.ShutHandle()
 	c.createClientSocket()
 	
 	log.Infof("action: loop_starts | result: success | client_id: %v", c.config.ID)
 
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
 		log.Infof("action: loop_iter | result: success | client_id: %v", c.config.ID)
-		
-		//ej4
 		if !c.running {
 			log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-			break
+			return
+		}
+		
+		bets, err := c.getBets()
+		if err != nil {
+			log.Errorf("action: obtencion de apuesta_serializadas | result: fail | client_id: %v | error: %v",
+				c.config.ID, err)
+			c.StartClientLoop()
 		}
 
-		// ej5
-		
-		// recibir y serializar la apuesta
-		bets, err := c.getBets()
-		
-		validateAction("apuesta_serializada", err != nil, err, c.config.ID)
-
-		// enviar con cuidado de que cubra bien la cantidad
 		sentSize, err := c.sendBets(bets)
-		
-		time.Sleep(c.config.LoopPeriod)
-
-		validateAction("apuesta_serializada", err != nil || sentSize == 0, err, c.config.ID)
+		if err != nil || sentSize == 0 {
+			log.Errorf("action: envio de apuesta_serializadas | result: fail | client_id: %v | error: %v",
+				c.config.ID, err)
+			return
+		}
 		
 		c.running = false
-		
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-		
+				
 	}
 	
 	c.conn.Close()
@@ -115,20 +98,16 @@ func (c *Client) StartClientLoop() {
 
 	for pending_results {
 		c.createClientSocket()
-
-		// Create the connection the server in every loop iteration. Send an
-		
 		_,_ = c.askWinners()
-		
 		success := c.reciveWinners()
-		
 		if success {
 			pending_results = false
 		}
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
 		c.conn.Close()
 	}
+
+	// sleep por los tests
+	time.Sleep(2 * time.Second) 
 	
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
@@ -157,7 +136,7 @@ func (c* Client) getBets() ([]Bet, error) {
 		bet, err := c.parseBet(line)
 		if err != nil {
 			log.Errorf("action: parse_bet | result: fail | error: %v", err)
-			continue
+			return c.getBets()
 		}
 		bets = append(bets, bet)
 	}
@@ -166,7 +145,6 @@ func (c* Client) getBets() ([]Bet, error) {
 		log.Errorf("action: scan_file | result: fail | error: %v", err)
 		return nil, err
 	}
-
 	if len(bets) == 0 {
 		return nil, fmt.Errorf("no bets found in CSV")
 	}
@@ -203,7 +181,6 @@ func (c* Client) sendBets(bets []Bet) (int, error) {
 		}
 		
 		sent, err := send(data, c.conn, c.config.ID)
-		
 		if err != nil {
 			log.Errorf("action: batch send failed | result: fail | client_id: %v | error: %v",
 			 	c.config.ID, err)
@@ -213,8 +190,13 @@ func (c* Client) sendBets(bets []Bet) (int, error) {
 	}
 
 	finalizado := fmt.Sprintf("Agencia %s ha finalizado la carga", c.config.ID)
-
-	send([]byte(finalizado), c.conn, c.config.ID)
+	sent, err := send([]byte(finalizado), c.conn, c.config.ID)
+	if err != nil {
+		log.Errorf("action: batch end send failed | result: fail | client_id: %v | error: %v",
+			 c.config.ID, err)
+		return 0, err
+	}
+	totalSent += sent
 
 	return totalSent, nil
 }
@@ -225,25 +207,25 @@ func (c Client) askWinners()(int, error) {
 
 func send(data []byte, connection net.Conn, id string) (int, error) {
 	totalSent := 0
-	var err error
-
 	dataSize := uint32(len(data))
-
 	buffer := new(bytes.Buffer)
-	
-	err = binary.Write(buffer, binary.BigEndian, dataSize)
-	
-	validateSend("buff msg size", err, id)
+	err := binary.Write(buffer, binary.BigEndian, dataSize)
+	if err != nil {
+		log.Errorf("action: wirte buff msg size | result: fail | client_id: %v | error: %v",
+			id, err)
+		return 0, err
+	}
 	
 	err = binary.Write(buffer, binary.BigEndian, data)
-	
-	validateSend("buff msg", err, id)
+	if err != nil {
+		log.Errorf("action: buff msg | result: fail | client_id: %v | error: %v",
+			id, err)
+		return 0, err
+	}
 	
 	messageSize := buffer.Len()
 	for totalSent < messageSize {
-		// log.Infof("escritura de conn en sendBets")
 		n, _ := connection.Write(buffer.Bytes())
-		// validateSend("send buff", err, id)
 		totalSent += n
 	}
 
@@ -257,15 +239,24 @@ func (c* Client) reciveWinners() bool {
 		)
 		return false
 	}
+
 	msgSize := 0
 	sizeBuffer := make([]byte, 4)
 	_, err := io.ReadFull(c.conn, sizeBuffer) 
-	validateRecv("recv msg size", err, c.config.ID)
+	if err != nil && err != io.EOF{
+		log.Errorf("action: recv size | result: fail | client_id: %v | error: %v",
+			c.config.ID, err)
+		return false
+	}
 
 	msgSize = int(binary.BigEndian.Uint32(sizeBuffer))
 	msgBuffer := make([]byte, msgSize)
 	_, err = io.ReadFull(c.conn, msgBuffer)
-	validateRecv("recv msg", err, c.config.ID)
+	if err != nil && err != io.EOF{
+		log.Errorf("action: recv winners | result: fail | client_id: %v | error: %v",
+			c.config.ID, err)
+		return false
+	}
 
 	parts := strings.Split(string(msgBuffer), ": ")
 	if len(parts) != 2 {
