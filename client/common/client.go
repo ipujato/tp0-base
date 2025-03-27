@@ -175,8 +175,11 @@ func (c Client) sendBets(bets []Bet) (int, error) {
 	i := 0
 	for i < len(bets) {
 		data := []byte{}
-		for j := 0; j < c.config.BatchMaxAmout && i < len(bets); j++ {
-			data = append(data, []byte(bets[i].getBetSerialized())...)
+		batchBytes := 0
+		for j := 0; j < c.config.BatchMaxAmout && i < len(bets) && batchBytes < 8192; j++ {
+			betData := []byte(bets[i].getBetSerialized())
+			data = append(data, betData...)
+			batchBytes += len(betData)
 			i++
 		}
 		
