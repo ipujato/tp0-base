@@ -189,16 +189,47 @@ Comprobé en bash la cantidad de parámetros para no levantar python innecesaria
 
 ### Ej2
 Se corre con los make provistos por la catedra.
+Para ello simplemente se modifica el generar-compose para que se incluya como volume las configuraciones del cliente y el servidor respectivamente.
+Con esto se puede facilmente modificarlos con sus configuraciones que viven dentro del volume.
 
 ### Ej3 
 Para ejecutarlo primero debí correr `chmod +x validar-echo-server.sh` debido a que no tenia permisos de ejecución. Es posible que sea necesario. Luego se corre como dice el enunciado, desde raíz: `./validar-echo-server.sh`.
+Lo que hace es correr un pequeño script de docker que crea una red dentro de un contenedor para hacer un echo en la red sobre un netcat. Luego se comprueba que ese echo retorne correctamente lo enviado.
+Para levantar este contenedor temporal se usa `docker run --rm --platform linux/amd64 --network=tp0_testing_net` donde se indica:
+* --rm se eliminara automaticamente al terminar
+* --platform linux/amd64 especifica la arquitectura para que se pueda ejecutar desde cualquiera
+* --network define a que red vamos a testear
+Sobre ella se corre luego con alpine el netcat para ver el resultado. 
 
 ### Ej4
 Para esto tuve que implementar un catch a la señal de Sigterm en ambos el cliente y el server.
-Del lado del server se implementa con signal.signal donde definimos que funcion handleará la señal. En el handler en si se loggea el cierre, se setea en un bool de estado, se cierra el socket de acceptacion y el de todos los clientes.
-Del lado del client en el go se crea un channel con os.Signal y luego signal.Notify donde se define que en ese chanel se recibira la señal. Luego se genera al comienzo del cliente la go rutine que ejecuta la function de handle, que queda bloqueada a espera de la notificacion. Al ser notificado cierra el skt y setea un bool de estado.
+Del lado del server se implementa con `signal.signal` donde definimos que funcion handleará que señal, en este caso SIGTERM. A partir de ello creamos un handler el cual cual ejecuta el cierre. En el handler en si se loggea el cierre, se setea en un bool de estado, se cierra el socket de acceptacion y el de todos los clientes.
+Del lado del client en el go se crea un channel con `os.Signal` y luego `signal.Notify` donde se define que en ese chanel se recibira la señal. Luego se genera al comienzo del cliente la go rutine que ejecuta la function de handle, que queda bloqueada a espera de la notificacion. Al ser notificado cierra el skt y setea un bool de estado. 
+En ambos casos el flujo se ejecuta sin ninguna diferencia respecto a no tenerlo, pero se define un plan de accion claro ante el SIGTERM para que ambos cierren sus recursos y terminen de forma ordenada. Esto es fundamental para sistemas escalables. 
 
-
+## Parte 2: Repaso de Comunicaciones
+Para mi sistema de comunicacion opte por comunicar siempre primero en un bloque de 4 bytes el tamaño del mensaje a recibir y luego el mensaje en si. De esta manera se logra una rapida y eficiente implementacion. Quien envia tan solo debe generar un mensaje que concatene los bytes (en Big Endian) del tamaño del mensaje con el mensaje, y quien recibe siempre lee los primero 4 y averigua cuanto mas leer. Esto permite una implementacion simple y robusta, ademas, no hay nunca trafico innecesario como si lo habria si los paquetes fueran de tamaño fijo. 
+Para prevenir escrituras y lecturas cortas ambas iteran comparando el tamaño esperado a enviar vs el tamaño acumulado que fue retornando read o write segun corresponda. 
+### Ej5
+Para la comunicacion de las bets use lo mas simple posible, unir los campos separandolos con un delimitador, en este caso `|`. La ventaja de esto es que es muy simple y permite correr un split para obtener del otro lado todos los campos de las bets. Como mencione arriba esto se complementaba con el tamaño previamente enviado. Quedaria algo asi el paquete a codificar {4B tamaño}{ID}|{NOMBRE}|{APELLIDO}|{DOCUMENTO}|NACIMIENTO}|{NUMERO}. 
+Del lado del server al obtener un mensaje se obtienen primero 4 bytes con los cuales sabe cuanto medira el string que contiene "{ID}|{NOMBRE}|{APELLIDO}|{DOCUMENTO}|NACIMIENTO}|{NUMERO}" y con split('|') ya obtuviste todo. 
+El servidor en esta etapa continua teniendo conexiones volatiles y lo mismo el cliente, quien solo comunica su bet, recibe confirmacion y termina su programa. Del lado del servidor termina su comunicacion con ese cliente pero mantiene abierto por si otro cliente se conecta.
+### Ej6
+En esta etapa el nuevo escalon es la modalidad de los batches. Esto implica que deja de ser una comunicacion tan lineal y pasa a ser mas iterativa. 
+Para ello implemente primero el cliente. En el cliente primero se leen las apuestas de los archivos definidos en los volumes de docker y se agrupan en batches segun definidos por el config. Aca nuevamente toma valor que sean flexibles los paquetes ya que se optimiza al maximo cada envio segun el tamaño de batch definido. Del lado del cliente se empaqueta todo y se separa cada bet con un `\n`. De esta manera a ojos del protocolo es un largo string que envia nuevamente en formato 4bytes tamaño y luego el mensaje. Para finalizar el envio de los batches, envia otro mensaje indicando que su agencia termino de enviar los paquetes. 
+Del lado del server se reciben los paquetes y se hacen dos splits, primero por `\n` obteniendo las bets individuales y luego por `|` para obtener los campos. El servidor sigue recibiendo respuestas de un mismo cliente hasta que obteiene la señal de paro donde entiende que este cliente ya termino su trabajo y deja de esperar nuevos paquetes, terminando la comunciacion. Nuevamente el servidor queda abierto a espera de nuevas posibles conexiones. 
+### Ej7
+Para esta variacion tuve que modificar ambos lados. 
+Para este paso es necesario ir y volver entre diferentes conexiones, ya que el server y el cliente no persisten las mismas, por lo que opte por crear una nueva abstraccion del lado del servidor, las agency. Estas son encargadas de manejar la conexion con una agencia. Saben entenderlas y traducir al servidor su necesidad, ademas, le mantienen el estado. Esto ultimo toma mucha relevancia para poder coordinar el sorteo. Por cada nueva conexion el cliente se presenta, si es nuevo se crea una agency, si es preexistente se actualiza la conexion. Lo que yo hice fue crear una pseudo barrera en la que se espera que todas las agencies esten listas. Cuando un cliente termino de enviar sus apuestas y quiere obtener los ganadores envia una solicitud y la agency guarda este estado y las solicita. 
+Si todas las agencys ya estan en estado de obtener los ganadores se avanza con el sorteo, sino se retorna un no al cliente, recordando la agency en que estado esta. Del lado del cliente se espera un momento y se intenta nuevamente. 
+Eventualmente todas estan listas, el servidor corre el sorteo y le pasa la lista de ganadores a la agency. La agency filtra a solo su numero de agencia y se la comunica al cliente. Es importante notar que la agency es un servicio al server.
+## Ej2: Repaso de Concurrencia
+Primero que nada opte por usar procesos en lugar de threading. El link provisto por la catedra habla de que "Two threads calling a function may take twice as much time as a single thread calling the function twice. The GIL can cause I/O-bound threads to be scheduled ahead of CPU-bound threads, and it prevents signals from being delivered.". Eso es directamente un liquidar a la implementacion. Es un trabajo intenso de I/O y usamos señales para handle el cierre del mismo. Debido a esto multithreading queda descartado y usamos multiprocesing, que permite un manejo concurrente del servidor. Particularmente permite que el socket aceptador siempre este vivo y que se lance un proceso por cada cliente que se conecta. 
+El problema que esto trae es coordinar el acceso a los recursos compartidos, en este caso el archivo de bets y el momento del sorteo. Para el archivo de bets use un lock clasico y para el sorteo una barrera que espera a que todos lleguen antes de avanzar. 
+### Ej8
+Para esta etapa se solucionan parte de los problemas del 7. Principalmente deja de tener neceisdad una agency relacionada especificamente a cada conexion ya que las mismas pueden quedarse abiertas en cada proceso y esperar en una barrier clasica. Esto llevo
+a que no haya mas una agencia por conexion, sino que simplemente la use como microservicio. El servidor le pasa a una agency una tarea para alguien y este la cumple y muere. Al no conservar ningun estado no es necesario que persista pero permite abstraer al server de las particularidades del sistema. 
+Para el flujo del programa se mantiene similar. El servidor acepta a un cliente y lanza un proceso para que lo maneje. El proceso recibe las apuestas, toma el lock y las guarda, suelta el lock (el archivo es seccion critica). El cliente luego pide ver los ganadores y el proceso va en busca de ellos pero se encuentra la barrier. La misma gestiona la espera y eventualmente le permite pasar, donde nuevamente debe tomar el lock para leer le archivo. Envia a traves de la agency para filtrar los ganadores que aplican y termina la comunicacion con este cliente. Al finalizar el proceso se une al hilo principal terminando su ciclo de vida.
 
 ## Ejecución de los tests
 Para la correcta ejecución de los mismos me fue necesario incluir el sleep previo al cierre de los clientes.
