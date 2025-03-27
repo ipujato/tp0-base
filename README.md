@@ -184,7 +184,7 @@ La corrección personal tendrá en cuenta la calidad del código entregado y cas
 ## Parte 1: Introducción a Docker
 
 ### Ej1
-Para ejecutarlo primero debí correr `chmod +x generar-compose.sh` debido a que no tenia permisos de ejecución. Es posible que sea necesario. Luego se corre como dice el enunciado, desde raíz: `./generar-compose.sh docker-compose-dev.yaml 5`.
+Para ejecutarlo primero debí correr `chmod +x generar-compose.sh` debido a que no tenia permisos de ejecución. Es posible que no sea necesario. Luego se corre como dice el enunciado, desde raíz: `./generar-compose.sh docker-compose-dev.yaml 5`.
 
 Como casos de error tuve en cuenta: parámetros insuficientes, cantidades invalidas de clientes (negativos), archivos inválidos y parámetros inválidos. 
 Comprobé en bash la cantidad de parámetros para no levantar python innecesariamente ya que es una comprobación fácil y rápida realizable en bash sin problemas.
@@ -207,9 +207,11 @@ Sobre ella se corre luego con alpine el netcat para ver el resultado.
 
 
 ### Ej4
+De aca en adelante, se ejecuta con `make docker-compose-up` y luego `make docker-compose-logs` para ver los logs. Para eliminar los contenedores se usa `make docker-compose-down`.
+
 Para esto tuve que implementar un catch a la señal de Sigterm en ambos el cliente y el server.
 
-Del lado del server se implementa con `signal.signal` donde definimos que funcion handleará que señal, en este caso SIGTERM. A partir de ello creamos un handler el cual cual ejecuta el cierre. En el handler en si se loggea el cierre, se setea en un bool de estado, se cierra el socket de acceptacion y el de todos los clientes.
+Del lado del server se implementa con `signal.signal` donde definimos que funcion handleará que señal, en este caso SIGTERM. A partir de ello creamos un handler el cual ejecuta el cierre. En el handler en si se loggea el cierre, se setea en un bool de estado, se cierra el socket de aceptacion y el de todos los clientes.
 
 Del lado del client en el go se crea un channel con `os.Signal` y luego `signal.Notify` donde se define que en ese chanel se recibira la señal. Luego se genera al comienzo del cliente la go rutine que ejecuta la function de handle, que queda bloqueada a espera de la notificacion. Al ser notificado cierra el skt y setea un bool de estado. 
 
@@ -222,6 +224,7 @@ Para mi sistema de comunicacion opte por comunicar siempre primero en un bloque 
 
 Para prevenir escrituras y lecturas cortas ambas iteran comparando el tamaño esperado a enviar vs el tamaño acumulado que fue retornando read o write segun corresponda. 
 
+En cuanto a los sockets elegi TCP ya que en este caso es preferible tener asegurado que hayan llegado las bets a hacerlo rapido. Imaginemos un caso en que uno apuesta y gana y no llego la apuesta, automaticamente queda descartado UDP. Ademas, permite que nos abstraigamos lo mas posible de toda la logica de envio.
 
 ### Ej5
 Para la comunicacion de las bets use lo mas simple posible, unir los campos separandolos con un delimitador, en este caso `|`. La ventaja de esto es que es muy simple y permite correr un split para obtener del otro lado todos los campos de las bets. Como mencione arriba esto se complementaba con el tamaño previamente enviado. Quedaria algo asi el paquete a codificar {4B tamaño}{ID}|{NOMBRE}|{APELLIDO}|{DOCUMENTO}|NACIMIENTO}|{NUMERO}. 
@@ -233,7 +236,7 @@ El servidor en esta etapa continua teniendo conexiones volatiles y lo mismo el c
 En esta etapa el nuevo escalon es la modalidad de los batches. Esto implica que deja de ser una comunicacion tan lineal y pasa a ser mas iterativa. 
 Para ello implemente primero el cliente. En el cliente primero se leen las apuestas de los archivos definidos en los volumes de docker y se agrupan en batches segun definidos por el config. Aca nuevamente toma valor que sean flexibles los paquetes ya que se optimiza al maximo cada envio segun el tamaño de batch definido. Del lado del cliente se empaqueta todo y se separa cada bet con un `\n`. De esta manera a ojos del protocolo es un largo string que envia nuevamente en formato 4bytes tamaño y luego el mensaje. Para finalizar el envio de los batches, envia otro mensaje indicando que su agencia termino de enviar los paquetes. 
 
-Del lado del server se reciben los paquetes y se hacen dos splits, primero por `\n` obteniendo las bets individuales y luego por `|` para obtener los campos. El servidor sigue recibiendo respuestas de un mismo cliente hasta que obteiene la señal de paro donde entiende que este cliente ya termino su trabajo y deja de esperar nuevos paquetes, terminando la comunciacion. Nuevamente el servidor queda abierto a espera de nuevas posibles conexiones. 
+Del lado del server se reciben los paquetes y se hacen dos splits, primero por `\n` obteniendo las bets individuales y luego por `|` para obtener los campos. El servidor sigue recibiendo respuestas de un mismo cliente hasta que obtiene la señal de paro donde entiende que este cliente ya termino su trabajo y deja de esperar nuevos paquetes, terminando la comunciacion. Nuevamente el servidor queda abierto a espera de nuevas posibles conexiones. 
 
 ### Ej7
 Para esta variacion tuve que modificar ambos lados. 
@@ -252,7 +255,7 @@ El problema que esto trae es coordinar el acceso a los recursos compartidos, en 
 Para esta etapa se solucionan parte de los problemas del 7. Principalmente deja de tener neceisdad una agency relacionada especificamente a cada conexion ya que las mismas pueden quedarse abiertas en cada proceso y esperar en una barrier clasica. Esto llevo
 a que no haya mas una agencia por conexion, sino que simplemente la use como microservicio. El servidor le pasa a una agency una tarea para alguien y este la cumple y muere. Al no conservar ningun estado no es necesario que persista pero permite abstraer al server de las particularidades del sistema. 
 
-Para el flujo del programa se mantiene similar. El servidor acepta a un cliente y lanza un proceso para que lo maneje. El proceso recibe las apuestas, toma el lock y las guarda, suelta el lock (el archivo es seccion critica). El cliente luego pide ver los ganadores y el proceso va en busca de ellos pero se encuentra la barrier. La misma gestiona la espera y eventualmente le permite pasar, donde nuevamente debe tomar el lock para leer le archivo. Envia a traves de la agency para filtrar los ganadores que aplican y termina la comunicacion con este cliente. Al finalizar el proceso se une al hilo principal terminando su ciclo de vida.
+Para el flujo del programa se mantiene similar. El servidor acepta a un cliente y lanza un proceso para que lo maneje. El proceso recibe las apuestas, toma el lock y las guarda, suelta el lock (el archivo es seccion critica). El cliente luego pide ver los ganadores y el proceso va en busca de ellos pero se encuentra la barrier. La misma gestiona la espera y eventualmente le permite pasar, donde nuevamente debe tomar el lock para leer le archivo. En este caso no es enteramente necesario el lock ya que al ser escritura no deberia haber problema, pero a la larga, dada la posibilidad que el sistema cambie sus reglas . Envia a traves de la agency para filtrar los ganadores que aplican y termina la comunicacion con este cliente. Al finalizar el proceso se une al hilo principal terminando su ciclo de vida.
 
 
 ## Ejecución de los tests
