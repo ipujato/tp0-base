@@ -128,11 +128,9 @@ class Server:
                 
     def __get_winners(self):
         winners = []
-        self.bets_lock.acquire()
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 winners.append(bet)
-        self.bets_lock.release()
         return winners
         
