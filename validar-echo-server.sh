@@ -7,7 +7,7 @@ fi
 
 TEST_MESSAGE="Mensaje comprobacion ej3"
 
-RESPUESTA=$(echo "$TEST_MESSAGE" | docker run --rm --platform linux/amd64 --network=tp0_testing_net alpine sh -c "nc server 12345 -w 3")
+RESPUESTA=$(docker run --rm --platform linux/amd64 --network=tp0_testing_net alpine sh -c "echo $TEST_MESSAGE | nc server 12345")
 
 if [ "$RESPUESTA" = "$TEST_MESSAGE" ]; then
   echo "action: test_echo_server | result: success"
