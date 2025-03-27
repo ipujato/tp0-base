@@ -5,11 +5,11 @@ if ! docker image inspect alpine >/dev/null 2>&1; then
   docker pull alpine
 fi
 
-TEST_MESSAGE="Mensaje comprobacion ej3"
+MENSAJE="Mensaje comprobacion ej3"
 
-RESPUESTA=$(docker run --rm --platform linux/amd64 --network=tp0_testing_net alpine sh -c "echo $TEST_MESSAGE | nc server 12345")
+RESPUESTA=$(docker run --rm --platform linux/amd64 --network=tp0_testing_net alpine sh -c "echo $MENSAJE | nc server 12345")
 
-if [ "$RESPUESTA" = "$TEST_MESSAGE" ]; then
+if [ "$RESPUESTA" = "$MENSAJE" ]; then
   echo "action: test_echo_server | result: success"
 else
   echo "action: test_echo_server | result: fail"
